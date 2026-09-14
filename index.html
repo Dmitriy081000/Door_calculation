@@ -160,12 +160,12 @@
   .ws-box input[type=number]{width:60px; padding:4px 6px; font-size:12px;}
 
   /* ===== Specification ===== */
-  .spec-sheet{background:#fff; border:1px solid var(--line); padding:14px; margin-bottom:22px; color:#000; font-weight:700;}
-  .spec-head{border-bottom:2px solid #000; padding-bottom:6px; margin-bottom:8px;}
+  .spec-sheet{background:#fff; border:1px solid var(--line); padding:14px; margin-bottom:22px; color:#000; font-weight:700; overflow-x:auto;}
+  .spec-head{border-bottom:2px solid #000; padding-bottom:6px; margin-bottom:8px; min-width:1100px;}
   .spec-headinfo{width:100%; border-collapse:collapse; font-size:12px;}
   .spec-headinfo td{padding:2px 6px; vertical-align:top; border:none;}
-  .spec-page{position:relative;}
-  .spec-table{width:100%; border-collapse:collapse; font-size:10px; table-layout:fixed; border-bottom:1.5px solid #000;}
+  .spec-page{position:relative; min-width:1100px;}
+  .spec-table{width:100%; min-width:1100px; border-collapse:collapse; font-size:10px; table-layout:fixed; border-bottom:1.5px solid #000;}
   .spec-table th, .spec-table td{border:1px solid #000; padding:3px 3px; text-align:center; color:#000; overflow:hidden;}
   .spec-table th{font-size:6.5px; font-weight:700; background:#fff; line-height:1.2;}
   .spec-table td textarea{
@@ -193,10 +193,11 @@
     .spec-print-val{display:block;}
     .spec-sheet{
       border:none; box-shadow:none; margin:0; padding:8mm;
-      width:297mm; height:210mm; box-sizing:border-box;
+      width:297mm; height:210mm; box-sizing:border-box; overflow:visible;
       page-break-after:always; break-after:page;
     }
     .spec-sheet:last-child{page-break-after:auto;}
+    .spec-head, .spec-page, .spec-table{min-width:0;}
     @page{ size:A4 landscape; margin:0; }
   }
 </style>
