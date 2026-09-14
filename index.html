@@ -200,6 +200,8 @@
     @page{ size:A4 landscape; margin:0; }
   }
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -241,11 +243,47 @@ const KEYS = {
   series:'doors:seriesV2', hingeRef:'doors:hingeRef', hiddenExtras:'doors:hiddenExtrasV3', trimExtras:'doors:trimExtrasV1',
   handles:'doors:handles', company:'doors:company', currentObject:'doors:currentObject', invoices:'doors:invoices', specs:'doors:specs'
 };
+
+// --- Firebase / Firestore: спільне хмарне сховище на всю команду ---
+const firebaseConfig = {
+  apiKey: "AIzaSyCvfcK4eTHj0wdJQvqcoQJllfA7lypcRWU",
+  authDomain: "door-calcul.firebaseapp.com",
+  projectId: "door-calcul",
+  storageBucket: "door-calcul.firebasestorage.app",
+  messagingSenderId: "1092435554135",
+  appId: "1:1092435554135:web:118a3c073b72f82c949812"
+};
+let _fsDb = null;
+try{
+  firebase.initializeApp(firebaseConfig);
+  _fsDb = firebase.firestore();
+}catch(e){ console.error('Firebase init failed, falling back to localStorage only', e); }
+
 async function storeGet(key, fallback){
+  if(_fsDb){
+    try{
+      const doc = await _fsDb.collection('doorsCalc').doc(key).get();
+      if(doc.exists){
+        const data = doc.data();
+        if(data && 'value' in data){
+          const parsed = JSON.parse(data.value);
+          try{ localStorage.setItem('doorsCalc:'+key, data.value); }catch(e){} // локальний кеш про запас
+          return parsed;
+        }
+      }
+    }catch(e){ console.error('Firestore get failed, using local cache', key, e); }
+  }
   try{ const v = localStorage.getItem('doorsCalc:'+key); if(v==null) return fallback; return JSON.parse(v); }
   catch(e){ return fallback; }
 }
-async function storeSet(key, value){ try{ localStorage.setItem('doorsCalc:'+key, JSON.stringify(value)); } catch(e){ console.error('storage set failed', key, e); } }
+async function storeSet(key, value){
+  const json = JSON.stringify(value);
+  try{ localStorage.setItem('doorsCalc:'+key, json); } catch(e){ console.error('local cache set failed', key, e); }
+  if(_fsDb){
+    try{ await _fsDb.collection('doorsCalc').doc(key).set({value: json}); }
+    catch(e){ console.error('Firestore set failed (saved locally only)', key, e); }
+  }
+}
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function money(n){ return (Math.round((n||0)*100)/100).toLocaleString('ru-RU',{minimumFractionDigits:0,maximumFractionDigits:2}); }
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
