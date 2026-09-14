@@ -38,13 +38,15 @@
   .card-title{font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--copper-dark); margin-bottom:14px; display:flex; align-items:center; gap:8px;}
   .card-title::after{content:""; flex:1; height:1px; background:var(--line);}
 
-  .field{margin-bottom:12px;}
+  .field{margin-bottom:8px;}
   .field label{display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:5px;}
   .field .fhint{font-size:11px; color:var(--ink-soft); font-weight:400; margin-top:4px; line-height:1.5;}
   .field input, .field select, .field textarea{width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:var(--radius); background:#fff; font-size:14.5px; color:var(--ink);}
   .field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--brass); outline-offset:0; border-color:var(--brass);}
   .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
-  @media(max-width:560px){.row2{grid-template-columns:1fr;}}
+  .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
+  .row4{display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:10px;}
+  @media(max-width:560px){.row2{grid-template-columns:1fr;} .row3{grid-template-columns:1fr;} .row4{grid-template-columns:1fr 1fr;}}
 
   .seg{display:flex; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
   .seg button{flex:1; padding:9px 8px; background:#fff; border:none; border-right:1px solid var(--line); font-size:13px; font-weight:600; color:var(--ink-soft);}
@@ -114,7 +116,8 @@
   .notice-soft{background:#EFE4D3; color:#7A5A2E; border:1px solid var(--brass); padding:9px 11px; border-radius:var(--radius); font-size:12px; margin:10px 0; line-height:1.5;}
   .notice-info{background:var(--sage-bg); color:var(--sage); border:1px solid var(--sage); padding:9px 11px; border-radius:var(--radius); font-size:12px; margin:10px 0; line-height:1.5;}
 
-  .chk-list{display:flex; flex-direction:column; gap:8px; margin-bottom:6px;}
+  .chk-list{display:grid; grid-template-columns:1fr 1fr; gap:6px 14px; margin-bottom:6px;}
+  @media(max-width:560px){.chk-list{grid-template-columns:1fr;}}
   .chk-row{display:flex; align-items:flex-start; gap:8px; font-size:13.5px;}
   .chk-row input[type=checkbox]{margin-top:3px; width:auto;}
   .chk-row input[type=text]{width:70px; padding:4px 6px; font-size:12.5px;}
@@ -148,9 +151,10 @@
   .series-card .skind{padding:8px 10px; border:1px solid var(--line); border-radius:var(--radius); font-size:13px;}
   .tier-chip{display:inline-flex; align-items:center; gap:6px; background:var(--bg); border:1px solid var(--line); border-radius:999px; padding:4px 8px 4px 10px; font-size:12px; margin:0 6px 6px 0;}
   .tier-chip input{width:60px; padding:3px 5px; font-size:11.5px; border:1px solid var(--line); border-radius:3px;}
+  .tier-chip input[data-tier-field="label"]{width:210px;}
   .cellgroup{display:flex; gap:3px; align-items:center;}
-  .cellgroup input{width:52px;}
-  .cellgroup select{width:56px; padding:6px 2px;}
+  .cellgroup input{width:56px;}
+  .cellgroup select{width:60px; padding:6px 2px;}
   .ws-box{background:var(--bg); border:1px solid var(--line); border-radius:var(--radius); padding:10px; margin-bottom:12px; font-size:12.5px;}
   .ws-box label{display:inline-flex; align-items:center; gap:5px; margin-right:10px;}
   .ws-box input[type=number]{width:60px; padding:4px 6px; font-size:12px;}
@@ -516,9 +520,6 @@ const SEED_HIDDEN_EXTRAS = [
 const SEED_TRIM_EXTRAS = [
   {id:uid(), name:'Алюмінієвий каркас полотна (до 2050мм)', price:55, unit:'fixed'},
   {id:uid(), name:'Фарбування темніше за RAL 7038', price:25, unit:'fixed'},
-  {id:uid(), name:'Добірна планка 200мм', price:17, unit:'fixed'},
-  {id:uid(), name:'Добірна планка 300мм', price:34, unit:'fixed'},
-  {id:uid(), name:'Добірна планка 400мм', price:51, unit:'fixed'},
   {id:uid(), name:'Обшивка отвору 100мм', price:80, unit:'fixed'},
   {id:uid(), name:'Обшивка отвору 200мм', price:97, unit:'fixed'},
   {id:uid(), name:'Обшивка отвору 300мм', price:114, unit:'fixed'},
@@ -551,8 +552,9 @@ let state = {
 
 async function loadAll(){
   const storedSeries = await storeGet(KEYS.series, null);
-  state.series = storedSeries ?? buildSeed();
-  if(storedSeries){
+  const hasStoredSeries = Array.isArray(storedSeries) && storedSeries.length>0;
+  state.series = hasStoredSeries ? storedSeries : buildSeed();
+  if(hasStoredSeries){
     // Migration: bring in trim series added after this data was first saved, without touching
     // anything the user already edited (renames, price corrections, new series they added, etc.)
     const renameMap = {'40мм':'WOOD 40', '50мм':'WOOD 50'};
@@ -1042,6 +1044,18 @@ function computeSeriesCalc(f, kind){
     openingAddon = series.insideOpeningAddon;
   }
 
+  // Добірна планка: перший 100мм — безкоштовно, кожні наступні (неповні) 100мм — +17€/тир.
+  // Рахується автоматично від фактичної глибини (f.trimPlankWidth), без ручного вибору опції.
+  let dobirnaPlankaAmount = 0, dobirnaPlankaThreshold = 0;
+  if(kind==='trim'){
+    const dp = parseFloat(f.trimPlankWidth)||0;
+    if(dp>100){
+      const tiers = Math.min(3, Math.ceil((dp-100)/100));
+      dobirnaPlankaAmount = tiers*17;
+      dobirnaPlankaThreshold = 100 + tiers*100;
+    }
+  }
+
   const extrasCatalog = kind==='hidden' ? state.hiddenExtras : state.trimExtras;
   const extras = [];
   let extrasTotal = 0;
@@ -1058,9 +1072,9 @@ function computeSeriesCalc(f, kind){
     }
   });
 
-  const unit = basePrice + alumFrameAmount + widthSurchargeAmount + openingAddon + extrasTotal;
+  const unit = basePrice + alumFrameAmount + widthSurchargeAmount + openingAddon + dobirnaPlankaAmount + extrasTotal;
   return {series, row, w, h, tier, oversize, basePrice, hingeType, hingeQty, hingeQtyDefault, hingeTypeDefault,
-          alumFrameAmount, extraWidthPercent, widthSurchargeAmount, openingAddon, extras, extrasTotal, unit};
+          alumFrameAmount, extraWidthPercent, widthSurchargeAmount, openingAddon, dobirnaPlankaAmount, dobirnaPlankaThreshold, extras, extrasTotal, unit};
 }
 function buildDetails(calc, kind, f){
   const lines = [];
@@ -1084,6 +1098,7 @@ function buildDetails(calc, kind, f){
     if(pickedModel) lines.push('Дизайн полотна: '+pickedModel.finishLabel);
     lines.push('Открывання: '+(f.opening==='inside'?'інсайд':'звичайне')+', сторона: '+(f.openingSide==='right'?'права':'ліва')+' (колекція '+calc.series.name+')'+(calc.openingAddon>0?' (+'+money(calc.openingAddon)+' '+CUR+')':''));
     if(f.openingDepth) lines.push('Глибина проёму: '+f.openingDepth+'мм, добірна планка: '+(f.trimPlankWidth||'—'));
+    if(calc.dobirnaPlankaAmount>0) lines.push('Опція: добірна планка до '+calc.dobirnaPlankaThreshold+'мм +'+money(calc.dobirnaPlankaAmount)+' '+CUR);
     lines.push('Лиштва: '+(f.lyshtvaSets||'2')+' компл.');
     if(calc.alumFrameAmount>0) lines.push('Надбавка за алюмінієвий каркас: +'+money(calc.alumFrameAmount)+' '+CUR);
     if(f.doorColorRal) lines.push('Колір дверей: '+f.doorColorRal);
@@ -1251,17 +1266,18 @@ function renderCalcGeneric(kind){
       </div>
     </div>
     ` : `
-    <div class="field">
-      <label>${seriesLabel}</label>
-      <select id="${prefix}_series">${pool.map(s=>`<option value="${s.id}" ${s.id===f.seriesId?'selected':''}>${esc(s.name)}</option>`).join('')}</select>
-      ${series.note ? `<div class="fhint">${esc(series.note)}</div>` : ''}
+    <div class="${kind==='hidden' && rows.length ? 'row2' : ''}">
+      <div class="field">
+        <label>${seriesLabel}</label>
+        <select id="${prefix}_series">${pool.map(s=>`<option value="${s.id}" ${s.id===f.seriesId?'selected':''}>${esc(s.name)}</option>`).join('')}</select>
+        ${series.note ? `<div class="fhint">${esc(series.note)}</div>` : ''}
+      </div>
+      ${rows.length ? `
+      <div class="field">
+        <label>${rowLabel}</label>
+        <select id="${prefix}_row">${rows.map(r=>`<option value="${r.id}" ${r.id===f.rowId?'selected':''}>${esc(r.finishLabel)}</option>`).join('')}</select>
+      </div>` : `<div class="notice">В этой серии пока нет ни одной строки — добавьте их в «Прайс-лист».</div>`}
     </div>
-
-    ${rows.length ? `
-    <div class="field">
-      <label>${rowLabel}</label>
-      <select id="${prefix}_row">${rows.map(r=>`<option value="${r.id}" ${r.id===f.rowId?'selected':''}>${esc(r.finishLabel)}</option>`).join('')}</select>
-    </div>` : `<div class="notice">В этой серии пока нет ни одной строки — добавьте их в «Прайс-лист».</div>`}
     `}
 
     ${kind==='hidden' && rows.length ? (()=>{
@@ -1295,22 +1311,24 @@ function renderCalcGeneric(kind){
     })() : ''}
 
     ${kind==='hidden' ? `
-    <div class="field">
-      <label>Открывание</label>
-      <div class="seg">
-        <button type="button" data-hopening="normal" class="${f.opening==='normal'?'active':''}" ${!series.allowNormalOpening?'disabled':''}>Обычное</button>
-        <button type="button" data-hopening="inside" class="${f.opening==='inside'?'active':''}" ${!series.allowInsideOpening?'disabled':''}>Инсайд</button>
+    <div class="row3">
+      <div class="field">
+        <label>Открывание</label>
+        <div class="seg">
+          <button type="button" data-hopening="normal" class="${f.opening==='normal'?'active':''}" ${!series.allowNormalOpening?'disabled':''}>Обычное</button>
+          <button type="button" data-hopening="inside" class="${f.opening==='inside'?'active':''}" ${!series.allowInsideOpening?'disabled':''}>Инсайд</button>
+        </div>
       </div>
-      ${!series.allowNormalOpening || !series.allowInsideOpening ? `<div class="fhint">Для этого профиля в прайсе есть данные только по одному виду открывания.</div>` : ''}
-    </div>
-    <div class="field">
-      <label>Сторона открывания</label>
-      <div class="seg">
-        <button type="button" data-hside="left" class="${f.openingSide!=='right'?'active':''}">Ліве</button>
-        <button type="button" data-hside="right" class="${f.openingSide==='right'?'active':''}">Праве</button>
+      <div class="field">
+        <label>Сторона открывания</label>
+        <div class="seg">
+          <button type="button" data-hside="left" class="${f.openingSide!=='right'?'active':''}">Ліве</button>
+          <button type="button" data-hside="right" class="${f.openingSide==='right'?'active':''}">Праве</button>
+        </div>
       </div>
+      ${colorField(prefix,'profileColor','Цвет профиля',['Чорний (9005)','Сірий (Анодований)'],f.profileColor,f.profileColorCustom)}
     </div>
-    ${colorField(prefix,'profileColor','Цвет профиля',['Чорний (9005)','Сірий (Анодований)'],f.profileColor,f.profileColorCustom)}
+    ${!series.allowNormalOpening || !series.allowInsideOpening ? `<div class="fhint" style="margin:-4px 0 8px;">Для этого профиля в прайсе есть данные только по одному виду открывания.</div>` : ''}
     ` : ''}
 
     <div class="row2">
@@ -1333,25 +1351,29 @@ function renderCalcGeneric(kind){
       <div class="field"><label>Кол-во петель</label><input type="text" inputmode="numeric" id="${prefix}_hingeqty" value="${calc.hingeQty}"></div>
     </div>
     ${!calc.oversize ? `<div class="fhint" style="margin:-8px 0 12px;">По прайсу: ${hingeName(calc.hingeTypeDefault)} × ${calc.hingeQtyDefault}. Можно изменить вручную.</div>` : ''}
-    ${kind==='hidden' ? colorField(prefix,'hingeColor','Цвет петель',['Сірий','Чорний'],f.hingeColor,f.hingeColorCustom) : ''}
     ` : ''}
 
     ${kind==='hidden' ? `
-    <div class="field">
-      <label>Замок</label>
-      <select id="${prefix}_locktype">
-        ${['AGB стандарт','AGB тачлок','Замок замовника'].map(o=>`<option value="${esc(o)}" ${f.lockType===o?'selected':''}>${esc(o)}</option>`).join('')}
-      </select>
-      ${f.lockType==='Замок замовника' ? `<input type="text" id="${prefix}_lockCustomText" value="${esc(f.lockCustomText||'')}" placeholder="Який замок врізати (модель/опис)" style="margin-top:6px;"><div class="fhint">Замок клієнта — врізаємо отвір, гарантія на цей замок не поширюється.</div>` : ''}
+    <div class="row4">
+      <div class="field">
+        <label>Замок</label>
+        <select id="${prefix}_locktype">
+          ${['AGB стандарт','AGB тачлок','Замок замовника'].map(o=>`<option value="${esc(o)}" ${f.lockType===o?'selected':''}>${esc(o)}</option>`).join('')}
+        </select>
+        ${f.lockType==='Замок замовника' ? `<input type="text" id="${prefix}_lockCustomText" value="${esc(f.lockCustomText||'')}" placeholder="Який замок врізати (модель/опис)" style="margin-top:6px;"><div class="fhint">Замок клієнта — врізаємо отвір, гарантія на цей замок не поширюється.</div>` : ''}
+      </div>
+      ${colorField(prefix,'lockColor','Цвет замка',['Сірий','Чорний'],f.lockColor,f.lockColorCustom)}
+      ${colorField(prefix,'hingeColor','Цвет петель',['Сірий','Чорний'],f.hingeColor,f.hingeColorCustom)}
+      ${colorField(prefix,'sealColor','Цвет уплотнителя',['Білий','Сірий','Чорний'],f.sealColor,f.sealColorCustom)}
     </div>
-    ${colorField(prefix,'lockColor','Цвет замка',['Сірий','Чорний'],f.lockColor,f.lockColorCustom)}
-    <div class="field">
-      <label>Ручка</label>
-      <select id="${prefix}_handlemodel">${['Ручка 1','Ручка 2','Ручка 3'].map(o=>`<option value="${esc(o)}" ${f.handleModel===o?'selected':''}>${esc(o)}</option>`).join('')}</select>
-      <div class="fhint">Временные заглушки — замените на реальный каталог ручек, когда пришлёте список.</div>
+    <div class="row2">
+      <div class="field">
+        <label>Ручка</label>
+        <select id="${prefix}_handlemodel">${['Ручка 1','Ручка 2','Ручка 3'].map(o=>`<option value="${esc(o)}" ${f.handleModel===o?'selected':''}>${esc(o)}</option>`).join('')}</select>
+        <div class="fhint">Временные заглушки — замените на реальный каталог ручек, когда пришлёте список.</div>
+      </div>
+      ${colorField(prefix,'handleColor','Цвет ручки',['Сірий','Чорний'],f.handleColor,f.handleColorCustom)}
     </div>
-    ${colorField(prefix,'handleColor','Цвет ручки',['Сірий','Чорний'],f.handleColor,f.handleColorCustom)}
-    ${colorField(prefix,'sealColor','Цвет уплотнителя',['Білий','Сірий','Чорний'],f.sealColor,f.sealColorCustom)}
     ` : ''}
 
     ${kind==='trim' && series && series.insideOpeningAddon!=null ? `
@@ -1378,28 +1400,34 @@ function renderCalcGeneric(kind){
       <input type="text" id="${prefix}_doorcolorral" value="${esc(f.doorColorRal)}" placeholder="напр. RAL 9010">
     </div>
     ${kind==='trim' && selectedTrimGroup==='a' ? `
-    <div class="field" style="max-width:260px;">
-      <label>Алюмінієва вставка (молдинг)</label>
-      <div class="seg">
-        <button type="button" data-alum-insert="ні" class="${f.alumInsert!=='так'?'active':''}">Ні</button>
-        <button type="button" data-alum-insert="так" class="${f.alumInsert==='так'?'active':''}">Так</button>
+    <div class="row2" style="align-items:start;">
+      <div class="field" style="max-width:260px;">
+        <label>Алюмінієва вставка (молдинг)</label>
+        <div class="seg">
+          <button type="button" data-alum-insert="ні" class="${f.alumInsert!=='так'?'active':''}">Ні</button>
+          <button type="button" data-alum-insert="так" class="${f.alumInsert==='так'?'active':''}">Так</button>
+        </div>
       </div>
+      ${f.alumInsert==='так' ? colorField(prefix,'insertColor','Колір молдингу',['Сірий','Чорний'],f.insertColor,f.insertColorCustom) : '<div></div>'}
     </div>
-    ${f.alumInsert==='так' ? colorField(prefix,'insertColor','Колір молдингу',['Сірий','Чорний'],f.insertColor,f.insertColorCustom) : ''}
-    <div class="field" style="max-width:260px;">
-      <label>Скляна вставка</label>
-      <div class="seg">
-        <button type="button" data-glass-insert-a="ні" class="${f.glassInsertA!=='так'?'active':''}">Ні</button>
-        <button type="button" data-glass-insert-a="так" class="${f.glassInsertA==='так'?'active':''}">Так</button>
+    <div class="row2" style="align-items:start;">
+      <div class="field" style="max-width:260px;">
+        <label>Скляна вставка</label>
+        <div class="seg">
+          <button type="button" data-glass-insert-a="ні" class="${f.glassInsertA!=='так'?'active':''}">Ні</button>
+          <button type="button" data-glass-insert-a="так" class="${f.glassInsertA==='так'?'active':''}">Так</button>
+        </div>
       </div>
+      ${f.glassInsertA==='так' ? colorField(prefix,'glassColor','Колір скла',['Чорний','Білий','Дзеркало'],f.glassColor,f.glassColorCustom) : '<div></div>'}
     </div>
-    ${f.glassInsertA==='так' ? colorField(prefix,'glassColor','Колір скла',['Чорний','Білий','Дзеркало'],f.glassColor,f.glassColorCustom) : ''}
     ` : ''}
     ${kind==='trim' && selectedTrimGroup==='b' ? colorField(prefix,'glassColor','Колір скла',['Чорний','Білий','Дзеркало'],f.glassColor,f.glassColorCustom) : ''}
-    ${colorField(prefix,'sealColor','Колір ущільнювача',['Білий','Сірий','Чорний'],f.sealColor,f.sealColorCustom)}
-    ${colorField(prefix,'lockColor','Колір замку',['Сірий','Чорний'],f.lockColor,f.lockColorCustom)}
-    ${colorField(prefix,'hingeColor','Колір петель',['Сірий','Чорний'],f.hingeColor,f.hingeColorCustom)}
-    ${colorField(prefix,'handleColor','Колір ручки',['Сірий','Чорний'],f.handleColor,f.handleColorCustom)}
+    <div class="row4">
+      ${colorField(prefix,'sealColor','Колір ущільнювача',['Білий','Сірий','Чорний'],f.sealColor,f.sealColorCustom)}
+      ${colorField(prefix,'lockColor','Колір замку',['Сірий','Чорний'],f.lockColor,f.lockColorCustom)}
+      ${colorField(prefix,'hingeColor','Колір петель',['Сірий','Чорний'],f.hingeColor,f.hingeColorCustom)}
+      ${colorField(prefix,'handleColor','Колір ручки',['Сірий','Чорний'],f.handleColor,f.handleColorCustom)}
+    </div>
     ${series && /^alum/i.test(series.name) ? colorField(prefix,'profileColor','Колір профілю',['Сірий','Чорний'],f.profileColor,f.profileColorCustom) : ''}
     ` : ''}
 
@@ -1473,7 +1501,17 @@ function renderObject(){
   </div>`;
 }
 
+const PRICES_TAB_PASSWORD = '11'; // тестовий пароль — просто щоб не заходили випадково, не справжній захист
 function renderPrices(){
+  if(!state.pricesUnlocked){
+    return `
+    <div class="card" style="max-width:360px; margin:40px auto;">
+      <div class="card-title">Прайс-лист защищён</div>
+      <div class="field"><label>Пароль</label><input type="password" id="pricesPasswordInput" placeholder="Введите пароль"></div>
+      <div id="pricesPasswordError" style="color:#b00; font-size:13px; margin-bottom:8px; display:none;">Неверный пароль</div>
+      <button class="btn btn-primary" id="btnUnlockPrices">Войти</button>
+    </div>`;
+  }
   const hiddenSeries = state.series.filter(s=>s.kind==='hidden');
   const trimSeries = state.series.filter(s=>s.kind==='trim');
   return `
@@ -1521,10 +1559,7 @@ function renderSeriesCard(s){
   <div class="series-card" data-series-id="${s.id}">
     <div class="stop-row">
       <input class="sname" data-series-field="name" data-series-id="${s.id}" value="${esc(s.name)}">
-      <select class="skind" data-series-field="kind" data-series-id="${s.id}">
-        <option value="hidden" ${s.kind==='hidden'?'selected':''}>Скрытый монтаж</option>
-        <option value="trim" ${s.kind==='trim'?'selected':''}>С наличником</option>
-      </select>
+      <span class="mono" style="padding:8px 10px; color:var(--ink-soft); font-size:12px;">${s.kind==='hidden'?'Скрытый монтаж':'С наличником'}</span>
       <button class="icon-btn" data-del-series="${s.id}">✕ серию</button>
     </div>
     <div class="field" style="margin-bottom:10px;"><textarea data-series-field="note" data-series-id="${s.id}" rows="1" style="font-size:12.5px; padding:6px 8px;" placeholder="Примечание / что входит в комплект">${esc(s.note||'')}</textarea></div>
@@ -1556,24 +1591,22 @@ function renderSeriesCard(s){
     </div>
 
     <div style="overflow-x:auto;">
-    <table>
+    <table style="width:auto; min-width:100%;">
       <thead><tr>
-        <th>${s.kind==='trim'?'Модель':'Отделка'}</th>
-        ${tierCols.map(t=>`<th colspan="3">${esc(t.label)}</th>`).join('')}
+        <th style="min-width:360px;">${s.kind==='trim'?'Модель':'Отделка'}</th>
+        ${tierCols.map(t=>`<th colspan="3" style="white-space:normal; min-width:186px;">${esc(t.label)}</th>`).join('')}
         <th></th>
       </tr>
-      <tr><th></th>${tierCols.map(()=>`<th>Цена</th><th>Петли×</th><th>Тип</th>`).join('')}<th></th></tr></thead>
+      <tr><th></th>${tierCols.map(()=>`<th style="min-width:58px;">Цена</th><th style="min-width:58px;">Петли×</th><th style="min-width:64px;">Тип</th>`).join('')}<th></th></tr></thead>
       <tbody>
         ${s.rows.map(r=>`
         <tr data-series-row="${s.id}" data-row-id="${r.id}">
-          <td><input data-rowfield="finishLabel" value="${esc(r.finishLabel)}" style="min-width:220px;"></td>
+          <td><input data-rowfield="finishLabel" value="${esc(r.finishLabel)}" style="min-width:360px; width:360px;"></td>
           ${tierCols.map(t=>{
             const c = r.cells[t.id] || {price:0,hingeQty:0,hingeType:''};
-            return `<td><div class="cellgroup">
-              <input type="number" data-cellfield="price" data-tier-id="${t.id}" value="${c.price}">
-              <input type="number" data-cellfield="hingeQty" data-tier-id="${t.id}" value="${c.hingeQty}">
-              <select data-cellfield="hingeType" data-tier-id="${t.id}"><option value="">—</option>${state.hingeRef.map(h=>`<option value="${h.code}" ${h.code===c.hingeType?'selected':''}>${esc(h.code)}</option>`).join('')}</select>
-            </div></td>`;
+            return `<td style="min-width:58px;"><input type="number" data-cellfield="price" data-tier-id="${t.id}" value="${c.price}" style="width:100%;"></td>
+            <td style="min-width:58px;"><input type="number" data-cellfield="hingeQty" data-tier-id="${t.id}" value="${c.hingeQty}" style="width:100%;"></td>
+            <td style="min-width:64px;"><select data-cellfield="hingeType" data-tier-id="${t.id}" style="width:100%;"><option value="">—</option>${state.hingeRef.map(h=>`<option value="${h.code}" ${h.code===c.hingeType?'selected':''}>${esc(h.code)}</option>`).join('')}</select></td>`;
           }).join('')}
           <td><button class="icon-btn" data-del-row="${r.id}" data-series-id="${s.id}">✕</button></td>
         </tr>`).join('')}
@@ -1703,6 +1736,44 @@ const TRIM_BLOCK_EXTRA_H = 46, TRIM_BLOCK_EXTRA_W = 72; // same idea for trim (�
 function blankDoorEntry(){
   return {id:uid(), type:'door', name:'', blockSize:'', panelSize:'', finish:'', profileColor:'', opening:'', hinge:'', hingeQty:'', boxType:'', handle:'Так', wc:'Ні', lockMech:'', lockColor:'', sealColor:'', hingeColor:''};
 }
+function blankAluCuttingDoorEntry(){
+  return {id:uid(), type:'door', name:'', blockSize:'', panelSize:'', chetvVert:'', chetvHor:'', finish:'', profileColor:'', opening:'', hinge:'', hingeQty:'', boxType:'', handle:'Так', wc:'Ні', lockMech:'', lockColor:'', sealColor:'', hingeColor:''};
+}
+function buildAluCuttingSpecFromInvoice(invoice){
+  const entries = [];
+  invoice.items.forEach(item=>{
+    if(item.type!=='hidden') return; // ця специфікація стосується лише різальника алюмінієвого профілю скритого монтажу
+    const qty = item.qty||1;
+    for(let i=0;i<qty;i++){
+      const e = blankAluCuttingDoorEntry();
+      const sp = item.spec||{};
+      e.name = (sp.profileName||item.title) + (sp.frameMatrix?' мат. '+sp.frameMatrix:'');
+      e.panelSize = item.h+'×'+item.w;
+      e.blockSize = (item.h+BLOCK_EXTRA_H)+'×'+(item.w+BLOCK_EXTRA_W);
+      e.finish = (sp.faceFinish && sp.backFinish) ? (sp.faceFinish===sp.backFinish ? sp.faceFinish : sp.faceFinish+' / '+sp.backFinish) : (sp.finishLabel||'');
+      e.profileColor = sp.profileColor||'';
+      e.opening = sp.opening==='inside' ? ('Інсайд\n'+(sp.openingSide==='right'?'Праве':'Ліве')) : (sp.openingSide==='right'?'Праве':'Ліве');
+      e.hinge = hingeNameShort(sp.hingeCode||'');
+      e.hingeQty = sp.hingeQty;
+      e.boxType = state.boxSpec.name + (state.boxSpec.matrix?' мат. '+state.boxSpec.matrix:'');
+      e.handle = 'Так';
+      e.wc = 'Ні';
+      e.lockMech = sp.lockType + (sp.lockType==='Замок замовника' && sp.lockCustomText ? ' — '+sp.lockCustomText : '');
+      e.lockColor = sp.lockColor;
+      e.sealColor = sp.sealColor;
+      e.hingeColor = sp.hingeColor;
+      // Розрахунок: стойова — від висоти полотна, поперечна — від ширини полотна, надбавка на
+      // поперечну залежить від кольору профілю (чорний/сірий — трохи різні через товщину плівки).
+      const h = parseFloat(item.h)||0, w = parseFloat(item.w)||0;
+      const isGrey = /сір/i.test(e.profileColor||'');
+      e.chetvVert = h ? (h-12.5) : '';
+      e.chetvHor = w ? (w-(isGrey?24.3:23.9)) : '';
+      entries.push(e);
+    }
+  });
+  entries.push({id:uid(), type:'note', text:'Шильда WD'});
+  return entries;
+}
 function hingeNameShort(code){
   const h = state.hingeRef.find(x=>x.code===code);
   return h ? h.name : (code||'—');
@@ -1755,6 +1826,42 @@ function buildSpecFromInvoice(invoice){
   entries.push({id:uid(), type:'note', text:'Шильда WD'});
   return entries;
 }
+function blankCuttingDoorEntry(){
+  return {id:uid(), type:'door', name:'', lfVert:'', lfHor:'', lbVert:'', lbHor:'', dpDepth:'', dpVert:'', dpHor:'', korobVert:'', korobHor:'', lyshtvaQty:'2', finish:'', opening:''};
+}
+function buildCuttingSpecFromInvoice(invoice){
+  const entries = [];
+  invoice.items.forEach(item=>{
+    if(item.type!=='trim') return; // специфікація для розкрійника стосується лише дверей з наличником
+    const qty = item.qty||1;
+    for(let i=0;i<qty;i++){
+      const e = blankCuttingDoorEntry();
+      const sp = item.spec||{};
+      e.name = (sp.trimModelLabel || item.title) + (sp.modelName ? ' '+sp.modelName.replace(/^WOOD\s*/i,'')+(sp.frameMatrix?' мат. '+sp.frameMatrix:'') : '');
+      e.lyshtvaQty = sp.lyshtvaSets || '2';
+      e.finish = sp.doorColorRal || '';
+      e.opening = sp.opening==='inside' ? ('Інсайд\n'+(sp.openingSide==='right'?'Права':'Ліва')) : (sp.openingSide==='right'?'Права':'Ліва');
+      // Розрахунок розкрою: усі розміри — від реального розміру полотна (В×Ш), плюс фіксована
+      // надбавка під кожен конкретний виріб. Формула відрізняється для звичайного відкривання
+      // і для інсайду. Глибина добірної планки — не формула, а те саме значення, що й у
+      // звичайній специфікації (ширина добірної планки).
+      const h = parseFloat(item.h)||0, w = parseFloat(item.w)||0;
+      const isInside = sp.opening==='inside';
+      e.lfVert = h ? (h+(isInside?81:93)) : '';
+      e.lfHor = w ? (w+(isInside?-18:6)) : '';
+      e.lbVert = h ? (h+(isInside?100:96)) : '';
+      e.lbHor = w ? (w+(isInside?18:12)) : '';
+      e.dpVert = h ? (h+(isInside?20:16)) : '';
+      e.dpHor = w ? (w+(isInside?50:44)) : '';
+      e.dpDepth = sp.trimPlankWidth || '';
+      e.korobVert = h ? (h+13) : '';
+      e.korobHor = w ? (w+6) : '';
+      entries.push(e);
+    }
+  });
+  entries.push({id:uid(), type:'note', text:'Шильда WD'});
+  return entries;
+}
 function blankTrimDoorEntry(){
   return {id:uid(), type:'door', name:'', blockSize:'', panelSize:'', dobirnaPlanka:'', lyshtva:'2', finish:'', decor:'', opening:'', hinge:'', hingeQty:'', handle:'Так', wc:'Ні', lockMech:'Магнітний замок', lockColor:'', sealColor:'', hingeColor:'', profileColor:'', woodSchemeKey:'', woodSchemeDims:null};
 }
@@ -1786,6 +1893,9 @@ function buildTrimSpecFromInvoice(invoice){
       e.hingeColor = sp.hingeColor || '';
       e.profileColor = sp.profileColor || '';
       entries.push(e);
+      if(sp.dobirnaPlankaAmount>0){
+        entries.push({id:uid(), type:'note', text:'Опція: добірна планка до '+sp.dobirnaPlankaThreshold+'мм +'+money(sp.dobirnaPlankaAmount)+' '+CUR});
+      }
     }
   });
   entries.push({id:uid(), type:'note', text:'Шильда WD'});
@@ -1935,6 +2045,95 @@ function renderSpecPageTable(sp, pageNum, pageEntries, skipDiagram){
   </div>`;
 }
 
+function renderAluCuttingSpecPageTable(sp, pageNum, pageEntries){
+  const P = 'font-weight:700; font-size:12px;';
+  const ta = (field, id, val, extraStyle)=>`<textarea data-specfield="${field}" data-entry-id="${id}" rows="1" style="${extraStyle||''} font-size:12px;">${esc(val)}</textarea>`;
+  return `
+  <div class="spec-page">
+    <table class="spec-table">
+      <colgroup>
+        <col class="spec-col-numL"><col class="spec-col-name"><col style="width:5%;"><col style="width:5%;">
+        <col class="spec-col-ph"><col class="spec-col-pw"><col style="width:6%;"><col style="width:4.5%;">
+        <col class="spec-col-finish"><col class="spec-col-pcolor">
+        <col class="spec-col-opening"><col class="spec-col-hinge"><col class="spec-col-hqty"><col class="spec-col-box">
+        <col class="spec-col-handle"><col class="spec-col-wc"><col class="spec-col-lock">
+        <col class="spec-col-num">
+      </colgroup>
+      <thead>
+        <tr>
+          <th rowspan="2"></th>
+          <th rowspan="2">Найменування виробу</th>
+          <th colspan="2">Розмір дверного блоку</th>
+          <th colspan="2">Розмір полотна</th>
+          <th colspan="2">Вирізання четверті</th>
+          <th rowspan="2">Оздоблення</th>
+          <th rowspan="2">Профіль</th>
+          <th rowspan="2">Відкривання</th>
+          <th rowspan="2">Завіси</th>
+          <th rowspan="2">К-сть<br>завіс</th>
+          <th rowspan="2">Тип короби</th>
+          <th rowspan="2">Врізання<br>ручки</th>
+          <th rowspan="2">WC/PZ</th>
+          <th rowspan="2">Механізм замку</th>
+          <th rowspan="2">№<br>п/п</th>
+        </tr>
+        <tr><th>В</th><th>Ш</th><th>В</th><th>Ш</th><th>стойова</th><th>поперечна</th></tr>
+      </thead>
+      <tbody>
+        ${pageEntries.filter(e=>e.type!=='note').map(e=>{
+          const moveBtns = `<div class="no-print" style="display:flex; flex-direction:column; gap:0; justify-content:center; align-items:center;">
+              <button class="icon-btn" data-move-entry="${e.id}" data-dir="up" style="padding:0 3px; font-size:8px; line-height:1.4; border:none; margin:0;">↑</button>
+              <button class="icon-btn" data-move-entry="${e.id}" data-dir="down" style="padding:0 3px; font-size:8px; line-height:1.4; border:none; margin:0;">↓</button>
+              <button class="icon-btn" data-del-entry="${e.id}" style="padding:0 3px; font-size:8px; line-height:1.4; border:none; margin:0;">✕</button>
+            </div>`;
+          const [bh,bw] = (e.blockSize||'').split(/[x×]/i);
+          const [ph,pw] = (e.panelSize||'').split(/[x×]/i);
+          const selectField = (field,id,val,opts)=>`
+            <select class="screen-only" data-specfield="${field}" data-entry-id="${id}" style="font-size:12px;">${opts.map(o=>`<option ${val===o?'selected':''}>${o}</option>`).join('')}</select>
+            <span class="spec-print-val" style="font-size:12px;">${esc(val)}</span>`;
+          return `<tr data-spec-row="${e.id}">
+            <td class="mono" style="font-size:12px;">${e._num}${moveBtns}</td>
+            <td>${ta('name',e.id,e.name,P)}</td>
+            <td>${ta('blockH',e.id,bh||'')}</td>
+            <td>${ta('blockW',e.id,bw||'')}</td>
+            <td>${ta('panelH',e.id,ph||'',P)}</td>
+            <td>${ta('panelW',e.id,pw||'',P)}</td>
+            <td>${ta('chetvVert',e.id,e.chetvVert,P)}</td>
+            <td>${ta('chetvHor',e.id,e.chetvHor,P)}</td>
+            <td>${ta('finish',e.id,e.finish,P)}</td>
+            <td>${ta('profileColor',e.id,e.profileColor,P)}</td>
+            <td>${ta('opening',e.id,e.opening,P)}</td>
+            <td>${ta('hinge',e.id,e.hinge,P)}</td>
+            <td>${ta('hingeQty',e.id,e.hingeQty,P)}</td>
+            <td>${ta('boxType',e.id,e.boxType,P)}</td>
+            <td>${selectField('handle',e.id,e.handle,['Так','Ні'])}</td>
+            <td>${selectField('wc',e.id,e.wc,['Ні','WC','PZ'])}</td>
+            <td>${ta('lockMech',e.id,e.lockMech,P)}</td>
+            <td class="mono">${e._num}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    ${(()=>{
+      const notes = pageEntries.filter(e=>e.type==='note');
+      if(!notes.length) return '';
+      const noteBoxes = notes.map(e=>{
+        const moveBtns = `<div class="no-print" style="display:flex; gap:2px; justify-content:center; align-items:center;">
+            <button class="icon-btn" data-move-entry="${e.id}" data-dir="up" style="padding:0 3px; font-size:8px; border:none; margin:0;">↑</button>
+            <button class="icon-btn" data-move-entry="${e.id}" data-dir="down" style="padding:0 3px; font-size:8px; border:none; margin:0;">↓</button>
+            <button class="icon-btn" data-del-entry="${e.id}" style="padding:0 3px; font-size:8px; border:none; margin:0;">✕</button>
+          </div>`;
+        return `<div data-spec-row="${e.id}" style="border:1px solid #000; padding:6px 8px; margin-top:10px; display:flex; align-items:center; gap:8px; max-width:50%;">
+          <span class="mono">${e._num||''}</span>
+          <div style="flex:1;">${ta('text',e.id,e.text||'','font-weight:600; font-size:12px; width:100%;')}</div>
+          ${moveBtns}
+        </div>`;
+      }).join('');
+      return noteBoxes;
+    })()}
+  </div>`;
+}
+
 function renderTrimSpecPageTable(sp, pageNum, pageEntries, skipDiagram){
   const P = 'font-weight:700; font-size:12px;'; // pulled-from-calculator fields: bold + 2pt larger than the 10px baseline
   const ta = (field, id, val, extraStyle)=>`<textarea data-specfield="${field}" data-entry-id="${id}" rows="1" style="${extraStyle||''}">${esc(val)}</textarea>`;
@@ -2062,6 +2261,84 @@ function renderTrimSpecPageTable(sp, pageNum, pageEntries, skipDiagram){
   </div>`;
 }
 
+function renderCuttingSpecPageTable(sp, pageNum, pageEntries){
+  const ta = (field, id, val, extraStyle)=>`<textarea data-specfield="${field}" data-entry-id="${id}" rows="1" style="font-size:15px; ${extraStyle||''}">${esc(val)}</textarea>`;
+  return `
+  <div class="spec-page">
+    <table class="spec-table">
+      <colgroup>
+        <col style="width:3%;"><col style="width:13%;">
+        <col style="width:5.5%;"><col style="width:5.5%;">
+        <col style="width:5.5%;"><col style="width:5.5%;"><col style="width:5.5%;"><col style="width:5.5%;">
+        <col style="width:5.5%;"><col style="width:5.5%;"><col style="width:5.5%;">
+        <col style="width:6%;"><col style="width:10%;"><col style="width:12%;">
+      </colgroup>
+      <thead>
+      <tr>
+        <th rowspan="2">№</th>
+        <th rowspan="2">Найменування виробу</th>
+        <th colspan="2">Короб</th>
+        <th colspan="2">Лиштва лицьова</th>
+        <th colspan="2">Лиштва тил</th>
+        <th colspan="3">Добірна планка</th>
+        <th>Лиштва</th>
+        <th rowspan="2">Оздоблення</th>
+        <th rowspan="2">Відкривання</th>
+      </tr>
+      <tr>
+        <th>Стойова</th><th>Поперечна</th>
+        <th>Стойова</th><th>Поперечна</th>
+        <th>Стойова</th><th>Поперечна</th>
+        <th>Глибина</th><th>Стойова</th><th>Поперечна</th>
+        <th>ком-кт</th>
+      </tr>
+      </thead>
+      <tbody>
+      ${pageEntries.filter(e=>e.type!=='note').map(e=>{
+        const moveBtns = `<div class="no-print" style="display:flex; flex-direction:column; gap:0; justify-content:center; align-items:center;">
+            <button class="icon-btn" data-move-entry="${e.id}" data-dir="up" style="padding:0 3px; font-size:8px; line-height:1.4; border:none; margin:0;">↑</button>
+            <button class="icon-btn" data-move-entry="${e.id}" data-dir="down" style="padding:0 3px; font-size:8px; line-height:1.4; border:none; margin:0;">↓</button>
+            <button class="icon-btn" data-del-entry="${e.id}" style="padding:0 3px; font-size:8px; line-height:1.4; border:none; margin:0;">✕</button>
+          </div>`;
+        return `<tr data-spec-row="${e.id}">
+          <td class="mono" style="font-size:15px;">${e._num}${moveBtns}</td>
+          <td>${ta('name',e.id,e.name)}</td>
+          <td>${ta('korobVert',e.id,e.korobVert)}</td>
+          <td>${ta('korobHor',e.id,e.korobHor)}</td>
+          <td>${ta('lfVert',e.id,e.lfVert)}</td>
+          <td>${ta('lfHor',e.id,e.lfHor)}</td>
+          <td>${ta('lbVert',e.id,e.lbVert)}</td>
+          <td>${ta('lbHor',e.id,e.lbHor)}</td>
+          <td>${ta('dpDepth',e.id,e.dpDepth)}</td>
+          <td>${ta('dpVert',e.id,e.dpVert)}</td>
+          <td>${ta('dpHor',e.id,e.dpHor)}</td>
+          <td>${ta('lyshtvaQty',e.id,e.lyshtvaQty)}</td>
+          <td>${ta('finish',e.id,e.finish)}</td>
+          <td>${ta('opening',e.id,e.opening)}</td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table>
+    ${(()=>{
+      const notes = pageEntries.filter(e=>e.type==='note');
+      if(!notes.length) return '';
+      const noteBoxes = notes.map(e=>{
+        const moveBtns = `<div class="no-print" style="display:flex; gap:2px; justify-content:center; align-items:center;">
+            <button class="icon-btn" data-move-entry="${e.id}" data-dir="up" style="padding:0 3px; font-size:8px; border:none; margin:0;">↑</button>
+            <button class="icon-btn" data-move-entry="${e.id}" data-dir="down" style="padding:0 3px; font-size:8px; border:none; margin:0;">↓</button>
+            <button class="icon-btn" data-del-entry="${e.id}" style="padding:0 3px; font-size:8px; border:none; margin:0;">✕</button>
+          </div>`;
+        return `<div data-spec-row="${e.id}" style="border:1px solid #000; padding:6px 8px; margin-top:10px; display:flex; align-items:center; gap:8px; max-width:50%;">
+          <span class="mono">${e._num||''}</span>
+          <div style="flex:1;">${ta('text',e.id,e.text||'','font-weight:600; font-size:15px; width:100%;')}</div>
+          ${moveBtns}
+        </div>`;
+      }).join('');
+      return noteBoxes;
+    })()}
+  </div>`;
+}
+
 function buildNumberedPages(entries){
   const withPages = assignSpecPages(entries);
   let counter=0;
@@ -2116,7 +2393,41 @@ function renderSpecView(id){
         </tr></table>
         <div style="text-align:center; font-size:11px; margin-top:2px;">Термін ${esc(sp.productionDays)} днів</div>
       </div>
-      ${sp.kind==='trim' ? renderTrimSpecPageTable(sp, pn, pages[pn]) : renderSpecPageTable(sp, pn, pages[pn])}
+      ${sp.kind==='trim' ? renderTrimSpecPageTable(sp, pn, pages[pn]) : sp.kind==='cutting' ? renderCuttingSpecPageTable(sp, pn, pages[pn]) : renderSpecPageTable(sp, pn, pages[pn])}
+    </div>`).join('');
+
+  // Розкрій — та сама специфікація по цьому ж замовленню, просто для іншого майстра. Друкується
+  // одразу після основних листів, в межах одного й того самого документа/кнопки "Печать".
+  const cuttingPages = buildNumberedPages(sp.cuttingEntries||[]);
+  const cuttingSheetsHtml = cuttingPages.map((pageEntries,idx)=>`
+    <div class="spec-sheet">
+      <div class="spec-head">
+        <table class="spec-headinfo"><tr>
+          <td><b>Замовлення</b><br><span class="mono" style="font-size:16px;">${esc(sp.number)}</span></td>
+          <td><b>Дата</b><br>${esc(sp.date)}</td>
+          <td style="width:40%; text-align:center; font-weight:700; font-size:14px;">Розкрій${cuttingPages.length>1?' (стор. '+(idx+1)+' з '+cuttingPages.length+')':''}</td>
+          <td style="text-align:right;">Термін дії комерційної пропозиції ${esc(sp.offerValidDays)} дні</td>
+        </tr></table>
+        <div style="text-align:center; font-size:11px; margin-top:2px;">Термін ${esc(sp.productionDays)} днів</div>
+      </div>
+      ${renderCuttingSpecPageTable(sp, idx+1, pageEntries)}
+    </div>`).join('');
+
+  // Спеціфікація для різальника алюмінієвого профілю (скритий монтаж) — той самий принцип,
+  // друкується разом з основним документом.
+  const aluPages = buildNumberedPages(sp.aluCuttingEntries||[]);
+  const aluSheetsHtml = aluPages.map((pageEntries,idx)=>`
+    <div class="spec-sheet">
+      <div class="spec-head">
+        <table class="spec-headinfo"><tr>
+          <td><b>Замовлення</b><br><span class="mono" style="font-size:16px;">${esc(sp.number)}</span></td>
+          <td><b>Дата</b><br>${esc(sp.date)}</td>
+          <td style="width:40%; text-align:center; font-weight:700; font-size:14px;">Різання алюмінієвого профілю${aluPages.length>1?' (стор. '+(idx+1)+' з '+aluPages.length+')':''}</td>
+          <td style="text-align:right;">Термін дії комерційної пропозиції ${esc(sp.offerValidDays)} дні</td>
+        </tr></table>
+        <div style="text-align:center; font-size:11px; margin-top:2px;">Термін ${esc(sp.productionDays)} днів</div>
+      </div>
+      ${renderAluCuttingSpecPageTable(sp, idx+1, pageEntries)}
     </div>`).join('');
 
   return `
@@ -2124,7 +2435,15 @@ function renderSpecView(id){
     <button class="btn btn-ghost" id="btnBackSpecs">← К списку спецификаций</button>
     <button class="btn btn-primary" id="btnPrintSpec">Печать / Сохранить PDF</button>
     <button class="btn btn-ghost" id="btnExportSpecXls">Сохранить в Excel</button>
-    <button class="btn btn-ghost" id="btnAddSpecNote">+ Примечание</button>
+    ${(sp.cuttingEntries || sp.aluCuttingEntries) ? (state.notePickerOpen ? `
+    <span style="display:inline-flex; gap:4px; align-items:center;">
+      <span style="font-size:12px; color:var(--muted);">Куда добавить примечание?</span>
+      <button class="btn btn-ghost" id="btnAddNoteToSpec">В специфікацію</button>
+      ${sp.cuttingEntries ? `<button class="btn btn-ghost" id="btnAddNoteToCutting">В розкрій</button>` : ''}
+      ${sp.aluCuttingEntries ? `<button class="btn btn-ghost" id="btnAddNoteToAlu">В різання профілю</button>` : ''}
+      <button class="btn btn-ghost" id="btnCancelNotePicker">Отмена</button>
+    </span>` : `<button class="btn btn-ghost" id="btnAddSpecNote">+ Примечание</button>`)
+      : `<button class="btn btn-ghost" id="btnAddSpecNote">+ Примечание</button>`}
     <button class="btn btn-ghost" id="btnAddSpecDoor">+ Пустая дверь</button>
   </div>
 
@@ -2142,6 +2461,8 @@ function renderSpecView(id){
 
   <div id="specSheet">
     ${sheetsHtml}
+    ${cuttingSheetsHtml}
+    ${aluSheetsHtml}
   </div>`;
 }
 
@@ -2149,6 +2470,17 @@ function renderSpecView(id){
    HANDLERS
 ============================================================ */
 function attachHandlers(){
+  const btnUnlockPrices = document.getElementById('btnUnlockPrices');
+  if(btnUnlockPrices){
+    const doUnlock = ()=>{
+      const inp = document.getElementById('pricesPasswordInput');
+      if(inp && inp.value === PRICES_TAB_PASSWORD){ state.pricesUnlocked = true; render(); }
+      else { const err = document.getElementById('pricesPasswordError'); if(err) err.style.display='block'; }
+    };
+    btnUnlockPrices.onclick = doUnlock;
+    const pwInput = document.getElementById('pricesPasswordInput');
+    if(pwInput) pwInput.onkeydown = (e)=>{ if(e.key==='Enter') doUnlock(); };
+  }
   ['hidden','trim'].forEach(kind=>{
     const prefix = kind==='hidden'?'h':'t';
     const f = kind==='hidden'?state.hf:state.tf;
@@ -2289,6 +2621,8 @@ function attachHandlers(){
         openingSide: f.openingSide,
         openingDepth: f.openingDepth||'',
         trimPlankWidth: f.trimPlankWidth||'',
+        dobirnaPlankaAmount: calc.dobirnaPlankaAmount||0,
+        dobirnaPlankaThreshold: calc.dobirnaPlankaThreshold||0,
         lyshtvaSets: f.lyshtvaSets||'2',
         doorColorRal: f.doorColorRal||'',
         sealColor: colorValue(f.sealColor,f.sealColorCustom),
@@ -2477,7 +2811,11 @@ function attachHandlers(){
       date:new Date().toLocaleDateString('ru-RU'), offerValidDays:2, productionDays:45,
       kind,
       entries: kind==='trim' ? buildTrimSpecFromInvoice(inv) : buildSpecFromInvoice(inv),
-      trimEntries: kind==='mixed' ? buildTrimSpecFromInvoice(inv) : undefined
+      trimEntries: kind==='mixed' ? buildTrimSpecFromInvoice(inv) : undefined,
+      // Специфікація для розкрійника — той самий заказ, для іншого майстра. Друкується разом з
+      // основною, тому створюється автоматично тут же, а не як окремий документ.
+      cuttingEntries: hasTrim ? buildCuttingSpecFromInvoice(inv) : undefined,
+      aluCuttingEntries: hasHidden ? buildAluCuttingSpecFromInvoice(inv) : undefined
     };
     state.specifications = [...state.specifications, sp];
     await storeSet(KEYS.specs, state.specifications);
@@ -2491,7 +2829,7 @@ function attachHandlers(){
     await storeSet(KEYS.specs, state.specifications); render();
   });
   const btnBackSpecs = document.getElementById('btnBackSpecs');
-  if(btnBackSpecs) btnBackSpecs.onclick = ()=>{ state.viewSpecId=null; render(); };
+  if(btnBackSpecs) btnBackSpecs.onclick = ()=>{ state.viewSpecId=null; state.notePickerOpen=false; render(); };
   const btnPrintSpec = document.getElementById('btnPrintSpec');
   if(btnPrintSpec) btnPrintSpec.onclick = ()=> window.print();
   const btnExportSpecXls = document.getElementById('btnExportSpecXls');
@@ -2502,18 +2840,45 @@ function attachHandlers(){
     else if(sp.kind==='mixed'){
       exportSpecXls(state.viewSpecId, sp.entries, '-hidden');
       exportTrimSpecXls(state.viewSpecId, sp.trimEntries||[], '-wood');
-    } else exportSpecXls(state.viewSpecId);
+    } else if(sp.kind==='cutting'){ /* Excel-експорт для розкрою поки не зроблений — тільки PDF/друк */ }
+    else exportSpecXls(state.viewSpecId);
   };
   const btnAddSpecNote = document.getElementById('btnAddSpecNote');
   if(btnAddSpecNote) btnAddSpecNote.onclick = async ()=>{
     const sp = state.specifications.find(s=>s.id===state.viewSpecId); if(!sp) return;
+    if(sp.cuttingEntries || sp.aluCuttingEntries){ state.notePickerOpen = true; render(); return; }
     sp.entries.push({id:uid(), type:'note', text:''});
+    await storeSet(KEYS.specs, state.specifications); render();
+  };
+  const btnCancelNotePicker = document.getElementById('btnCancelNotePicker');
+  if(btnCancelNotePicker) btnCancelNotePicker.onclick = ()=>{ state.notePickerOpen = false; render(); };
+  const btnAddNoteToSpec = document.getElementById('btnAddNoteToSpec');
+  if(btnAddNoteToSpec) btnAddNoteToSpec.onclick = async ()=>{
+    const sp = state.specifications.find(s=>s.id===state.viewSpecId); if(!sp) return;
+    sp.entries.push({id:uid(), type:'note', text:''});
+    state.notePickerOpen = false;
+    await storeSet(KEYS.specs, state.specifications); render();
+  };
+  const btnAddNoteToCutting = document.getElementById('btnAddNoteToCutting');
+  if(btnAddNoteToCutting) btnAddNoteToCutting.onclick = async ()=>{
+    const sp = state.specifications.find(s=>s.id===state.viewSpecId); if(!sp) return;
+    sp.cuttingEntries = sp.cuttingEntries || [];
+    sp.cuttingEntries.push({id:uid(), type:'note', text:''});
+    state.notePickerOpen = false;
+    await storeSet(KEYS.specs, state.specifications); render();
+  };
+  const btnAddNoteToAlu = document.getElementById('btnAddNoteToAlu');
+  if(btnAddNoteToAlu) btnAddNoteToAlu.onclick = async ()=>{
+    const sp = state.specifications.find(s=>s.id===state.viewSpecId); if(!sp) return;
+    sp.aluCuttingEntries = sp.aluCuttingEntries || [];
+    sp.aluCuttingEntries.push({id:uid(), type:'note', text:''});
+    state.notePickerOpen = false;
     await storeSet(KEYS.specs, state.specifications); render();
   };
   const btnAddSpecDoor = document.getElementById('btnAddSpecDoor');
   if(btnAddSpecDoor) btnAddSpecDoor.onclick = async ()=>{
     const sp = state.specifications.find(s=>s.id===state.viewSpecId); if(!sp) return;
-    sp.entries.push(sp.kind==='trim' ? blankTrimDoorEntry() : blankDoorEntry());
+    sp.entries.push(sp.kind==='trim' ? blankTrimDoorEntry() : sp.kind==='cutting' ? blankCuttingDoorEntry() : blankDoorEntry());
     await storeSet(KEYS.specs, state.specifications); render();
   };
   ['sp_number','sp_date','sp_validdays','sp_proddays'].forEach(id=>{
@@ -2798,7 +3163,8 @@ document.getElementById('tabs').addEventListener('click', (e)=>{
   const btn = e.target.closest('.tab'); if(!btn) return;
   state.tab = btn.dataset.tab;
   if(state.tab!=='invoices') state.viewInvoiceId = null;
-  if(state.tab!=='specs'){ state.viewSpecId = null; state.specPicker = false; }
+  if(state.tab!=='specs'){ state.viewSpecId = null; state.specPicker = false; state.notePickerOpen = false; }
+  window.scrollTo(0, 0); // переключення вкладки — завжди починаємо згори, а не там, де було раніше
   render();
 });
 
