@@ -31,7 +31,6 @@
   .tabs::-webkit-scrollbar{display:none;}
   .tab{flex-shrink:0; padding:8px 14px; background:transparent; border:none; border-radius:999px; color:#C9C2B2; font-size:13px; font-weight:600; white-space:nowrap; transition:background .15s,color .15s;}
   .tab.active{background:var(--copper); color:#fff;}
-  .tab:not(.active):hover{background:#3A3834; color:#F2EFE8;}
 
   main{max-width:1040px; margin:0 auto; padding:20px 16px 80px;}
   .card{background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-bottom:16px; box-shadow:var(--shadow);}
@@ -65,7 +64,6 @@
     cursor:pointer; text-align:center; transition:border-color .15s, transform .15s, box-shadow .15s;
     display:flex; flex-direction:column; align-items:center; gap:6px;
   }
-  .model-card:hover{border-color:var(--copper);}
   .model-card img{max-height:110px; max-width:100%; display:block;}
   .model-card.selected{
     cursor:pointer; border-color:var(--copper); box-shadow:0 2px 10px rgba(35,34,32,.12); padding:16px; max-width:260px;
@@ -82,9 +80,7 @@
 
   .btn{padding:10px 16px; border-radius:var(--radius); border:1px solid transparent; font-size:13.5px; font-weight:600; display:inline-flex; align-items:center; gap:6px;}
   .btn-primary{background:var(--copper); color:#fff;}
-  .btn-primary:hover{background:var(--copper-dark);}
   .btn-ghost{background:transparent; border-color:var(--line); color:var(--ink);}
-  .btn-ghost:hover{border-color:var(--copper); color:var(--copper-dark);}
   .btn-sm{padding:6px 10px; font-size:12.5px;}
   .btn:disabled{opacity:.45; cursor:not-allowed;}
 
@@ -126,7 +122,6 @@
   .total-row .num{font-family:'IBM Plex Mono',monospace; color:var(--copper-dark);}
 
   .invoice-list-item{display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border:1px solid var(--line); border-radius:var(--radius); margin-bottom:8px; background:#fff; cursor:pointer; transition:border-color .15s;}
-  .invoice-list-item:hover{border-color:var(--copper);}
   .invoice-list-item .meta{font-size:12px; color:var(--ink-soft); margin-top:2px;}
   .invoice-list-item .sum{font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--copper-dark);}
 
@@ -143,7 +138,6 @@
   .invoice-footer{margin-top:22px; padding-top:14px; border-top:1px solid var(--line); font-size:12px; color:var(--ink-soft);}
 
   .icon-btn{background:transparent; border:1px solid var(--line); border-radius:var(--radius); padding:6px 9px; color:var(--ink-soft); font-size:12px;}
-  .icon-btn:hover{color:var(--red); border-color:var(--red);}
 
   .series-card{border:1px solid var(--line); border-radius:var(--radius); padding:14px; margin-bottom:16px; background:#fff;}
   .series-card .stop-row{display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;}
@@ -199,6 +193,17 @@
     .spec-sheet:last-child{page-break-after:auto;}
     .spec-head, .spec-page, .spec-table{min-width:0;}
     @page{ size:A4 landscape; margin:0; }
+  }
+
+  /* Hover effects only for devices that truly support hover (mouse) — avoids the classic
+     iOS/Android "needs two taps" quirk when :hover is defined on a touch device. */
+  @media (hover:hover) and (pointer:fine){
+  .tab:not(.active):hover{background:#3A3834; color:#F2EFE8;}
+  .model-card:hover{border-color:var(--copper);}
+  .btn-primary:hover{background:var(--copper-dark);}
+  .btn-ghost:hover{border-color:var(--copper); color:var(--copper-dark);}
+  .invoice-list-item:hover{border-color:var(--copper);}
+  .icon-btn:hover{color:var(--red); border-color:var(--red);}
   }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
