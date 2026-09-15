@@ -291,6 +291,8 @@ async function storeSet(key, value){
   }
 }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function roundTo5(v){ const n=parseFloat(v); if(!isFinite(n)) return null; return Math.round(n/5)*5; }
+let _suppressDimBlur = false; // true під час перемальовування, яке ми самі запустили через oninput — щоб не плутати це зі справжньою втратою фокусу користувачем
 function getActiveCompany(){ return state.companies.find(c=>c.id===state.activeCompanyId) || state.companies[0] || {name:'',requisites:'',phone:'',address:''}; }
 function money(n){ return (Math.round((n||0)*100)/100).toLocaleString('ru-RU',{minimumFractionDigits:0,maximumFractionDigits:2}); }
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -341,7 +343,7 @@ function buildSeed(){
     id:uid(), name:'40мм alum мат 8675', kind:'hidden',
     allowNormalOpening:true, allowInsideOpening:false, frameMatrix:'', allowAsymFinish:false,
     note:'',
-    widthSurcharge:null,
+    widthSurcharge:{enabled:true, baseWidth:815, step:100, percent:15, maxWidth:1100},
     tiers:[{id:t0,label:'до 800×2000мм (акція)',maxWidth:800,maxHeight:2000},{id:t1,label:'до 800×2100мм',maxWidth:800,maxHeight:2100},{id:t2,label:'до 800×2300мм',maxWidth:800,maxHeight:2300}],
     rows:[
       mkRow('Поліуретановий грунт на дві сторони полотна',[[t0,205,2,'K'],[t1,265,2,'K'],[t2,292,3,'K']]),
@@ -363,7 +365,7 @@ function buildSeed(){
     id:uid(), name:'55мм alum light мат. 8670', kind:'hidden',
     allowNormalOpening:true, allowInsideOpening:true, frameMatrix:'', allowAsymFinish:true,
     note:'',
-    widthSurcharge:null,
+    widthSurcharge:{enabled:true, baseWidth:815, step:100, percent:15, maxWidth:1100},
     tiers:[{id:u0,label:'до 800×2010мм (акція)',maxWidth:800,maxHeight:2010},{id:u1,label:'до 800×2100мм',maxWidth:800,maxHeight:2100},{id:u2,label:'до 800×2300мм',maxWidth:800,maxHeight:2300}],
     rows:[
       mkRow('З встановленням ДСП замовника (однакове ДСП на дві сторони)',[[u1,260,3,'K'],[u2,289,4,'K']]),
@@ -398,7 +400,7 @@ function buildSeed(){
     id:uid(), name:'55мм alum standart мат. 222122', kind:'hidden',
     allowNormalOpening:true, allowInsideOpening:true, frameMatrix:'', allowAsymFinish:true,
     note:'',
-    widthSurcharge:{enabled:true, baseWidth:800, step:100, percent:15, maxWidth:1100},
+    widthSurcharge:{enabled:true, baseWidth:815, step:100, percent:15, maxWidth:1100},
     tiers:[{id:v1,label:'до 800×2100мм',maxWidth:800,maxHeight:2100},{id:v2,label:'до 800×2300мм',maxWidth:800,maxHeight:2300},{id:v3,label:'до 800×2500мм',maxWidth:800,maxHeight:2500},{id:v4,label:'до 800×2750мм',maxWidth:800,maxHeight:2750}],
     rows:[
       mkRow('Поліуретановий грунт на дві сторони полотна',[[v1,322,3,'K'],[v2,354,3,'K'],[v3,370,5,'K'],[v4,446,6,'K']]),
@@ -439,7 +441,7 @@ function buildSeed(){
     id:uid(), name:'40мм деревяний каркас', kind:'hidden',
     allowNormalOpening:true, allowInsideOpening:false, frameMatrix:'', allowAsymFinish:false,
     note:'Полотно з оздобленням, короб, завіси мат хром, механізм замку (деревяний каркас)',
-    widthSurcharge:{enabled:true, baseWidth:800, step:100, percent:15, maxWidth:1100},
+    widthSurcharge:{enabled:true, baseWidth:815, step:100, percent:15, maxWidth:1100},
     tiers:[{id:w1,label:'до 800×2050мм',maxWidth:800,maxHeight:2050},{id:w2,label:'до 800×2300мм',maxWidth:800,maxHeight:2300},{id:w3,label:'до 800×2500мм',maxWidth:800,maxHeight:2500}],
     rows:[
       mkRow('Поліуретановий грунт на дві сторони полотна',[[w1,185,0,''],[w2,225,0,''],[w3,255,0,'']]),
@@ -453,7 +455,7 @@ function buildSeed(){
     id:uid(), name:'55мм деревяний каркас', kind:'hidden',
     allowNormalOpening:true, allowInsideOpening:true, frameMatrix:'', allowAsymFinish:false,
     note:'Полотно з оздобленням, короб, завіси мат хром, механізм замку (деревяний каркас)',
-    widthSurcharge:{enabled:true, baseWidth:800, step:100, percent:15, maxWidth:1100},
+    widthSurcharge:{enabled:true, baseWidth:815, step:100, percent:15, maxWidth:1100},
     tiers:[{id:x1,label:'до 800×2050мм',maxWidth:800,maxHeight:2050},{id:x2,label:'до 800×2300мм',maxWidth:800,maxHeight:2300},{id:x3,label:'до 800×2500мм',maxWidth:800,maxHeight:2500}],
     rows:[
       mkRow('Поліуретановий грунт на дві сторони полотна',[[x1,200,0,''],[x2,240,0,''],[x3,270,0,'']]),
@@ -494,7 +496,7 @@ function buildSeed(){
   series.push({
     id:uid(), name:'WOOD 40', kind:'trim',
     note:'Приховані завіси, магнітний замок, комбінований компланарний короб з фанери та МДФ, лиштва, добірна планка 100мм, фарбування по RAL та NCS. Нестандартні моделі рахуються окремо.',
-    widthSurcharge:null, allowNormalOpening:true, allowInsideOpening:false,
+    widthSurcharge:{enabled:true, baseWidth:815, step:100, percent:15, maxWidth:1100}, allowNormalOpening:true, allowInsideOpening:false,
     insideOpeningAddon:0, insideOpeningNote:'40мм — тільки звичайне відкривання (на себе).',
     tiers:[{id:y1,label:'до 800×2050мм',maxWidth:800,maxHeight:2050},{id:y2,label:'до 800×2300мм',maxWidth:800,maxHeight:2300},{id:y3,label:'до 800×2500мм',maxWidth:800,maxHeight:2500}],
     rows: buildWoodRows(y1,y2,y3,[2,3,4],'HF')
@@ -503,7 +505,7 @@ function buildSeed(){
   series.push({
     id:uid(), name:'WOOD 50', kind:'trim',
     note:'Приховані завіси, магнітний замок, комбінований компланарний короб з фанери та МДФ, лиштва, добірна планка 100мм, фарбування по RAL та NCS. Нестандартні моделі рахуються окремо. ПЕРЕВІРТЕ ціни — перенесені з WOOD 40, окремого прайсу на 50мм поки немає.',
-    widthSurcharge:null, allowNormalOpening:false, allowInsideOpening:true,
+    widthSurcharge:{enabled:true, baseWidth:815, step:100, percent:15, maxWidth:1100}, allowNormalOpening:false, allowInsideOpening:true,
     insideOpeningAddon:18, insideOpeningNote:'50мм — тільки інсайд (всередину приміщення).',
     tiers:[{id:z1,label:'до 800×2050мм',maxWidth:800,maxHeight:2050},{id:z2,label:'до 800×2300мм',maxWidth:800,maxHeight:2300},{id:z3,label:'до 800×2500мм',maxWidth:800,maxHeight:2500}],
     rows: buildWoodRows(z1,z2,z3,[3,4,5],'HF')
@@ -512,7 +514,7 @@ function buildSeed(){
   series.push({
     id:uid(), name:'Alum 40', kind:'trim', frameMatrix:'8675',
     note:'Ціна = ціна моделі WOOD 40 + надбавка за алюмінієвий каркас. ПЕРЕВІРТЕ надбавки для вилок 2300/2500мм — поки відомо лише +55€ до 2050мм.',
-    widthSurcharge:null, allowNormalOpening:true, allowInsideOpening:false, allowAsymFinish:false,
+    widthSurcharge:{enabled:true, baseWidth:815, step:100, percent:15, maxWidth:1100}, allowNormalOpening:true, allowInsideOpening:false, allowAsymFinish:false,
     insideOpeningAddon:0, insideOpeningNote:'40мм — тільки звичайне відкривання (на себе).',
     alumFrameAddon:{[al1]:55, [al2]:0, [al3]:0},
     tiers:[{id:al1,label:'до 800×2050мм',maxWidth:800,maxHeight:2050},{id:al2,label:'до 800×2300мм',maxWidth:800,maxHeight:2300},{id:al3,label:'до 800×2500мм',maxWidth:800,maxHeight:2500}],
@@ -522,7 +524,7 @@ function buildSeed(){
   series.push({
     id:uid(), name:'Alum 55 Light', kind:'trim', frameMatrix:'8670',
     note:'Ціна = ціна моделі WOOD 40 + надбавка за алюмінієвий каркас. ПЕРЕВІРТЕ надбавки для вилок 2300/2500мм, а також кількість завіс — поки відомо лише +55€ до 2050мм (за аналогією з Alum 40).',
-    widthSurcharge:null, allowNormalOpening:true, allowInsideOpening:true, allowAsymFinish:false,
+    widthSurcharge:{enabled:true, baseWidth:815, step:100, percent:15, maxWidth:1100}, allowNormalOpening:true, allowInsideOpening:true, allowAsymFinish:false,
     insideOpeningAddon:18, insideOpeningNote:'55мм Light — універсальна, доступні обидва варіанти відкривання.',
     alumFrameAddon:{[bl1]:55, [bl2]:0, [bl3]:0},
     tiers:[{id:bl1,label:'до 800×2050мм',maxWidth:800,maxHeight:2050},{id:bl2,label:'до 800×2300мм',maxWidth:800,maxHeight:2300},{id:bl3,label:'до 800×2500мм',maxWidth:800,maxHeight:2500}],
@@ -532,7 +534,7 @@ function buildSeed(){
   series.push({
     id:uid(), name:'Alum 55 Standart', kind:'trim', frameMatrix:'222122',
     note:'Ціна = ціна моделі WOOD 40 + надбавка за алюмінієвий каркас. ПЕРЕВІРТЕ надбавки для вилок 2300/2500мм, а також кількість завіс — поки відомо лише +55€ до 2050мм (за аналогією з Alum 40).',
-    widthSurcharge:null, allowNormalOpening:true, allowInsideOpening:true, allowAsymFinish:false,
+    widthSurcharge:{enabled:true, baseWidth:815, step:100, percent:15, maxWidth:1100}, allowNormalOpening:true, allowInsideOpening:true, allowAsymFinish:false,
     insideOpeningAddon:18, insideOpeningNote:'55мм Standart — універсальна, доступні обидва варіанти відкривання.',
     alumFrameAddon:{[cl1]:55, [cl2]:0, [cl3]:0},
     tiers:[{id:cl1,label:'до 800×2050мм',maxWidth:800,maxHeight:2050},{id:cl2,label:'до 800×2300мм',maxWidth:800,maxHeight:2300},{id:cl3,label:'до 800×2500мм',maxWidth:800,maxHeight:2500}],
@@ -1086,14 +1088,16 @@ function computeSeriesCalc(f, kind){
     alumFrameAmount = series.alumFrameAddon[tier.id];
   }
 
-  // Width-over-base surcharge (e.g. +15% per each 100mm of width beyond 800mm, up to a cap)
+  // Width-over-base surcharge — накопичувально (відсоток на відсоток): кожні наступні ws.step мм
+  // додають ще ws.percent% вже до ціни з попередньою надбавкою, а не до початкової базової ціни.
   let extraWidthPercent = 0, widthSurchargeAmount = 0;
   const ws = series.widthSurcharge;
   if(!oversize && ws && ws.enabled && w>ws.baseWidth){
     const cappedW = Math.min(w, ws.maxWidth);
     const steps = Math.ceil((cappedW-ws.baseWidth)/ws.step);
-    extraWidthPercent = steps*ws.percent;
-    widthSurchargeAmount = basePrice*(extraWidthPercent/100);
+    const multiplier = Math.pow(1+ws.percent/100, steps);
+    extraWidthPercent = (multiplier-1)*100; // ефективний сумарний % — для показу в деталях/специфікації
+    widthSurchargeAmount = basePrice*(multiplier-1);
   }
 
   // Inside-opening addon (trim doors: flat surcharge, profile goes from 40mm to 50mm)
@@ -1169,7 +1173,7 @@ function buildDetails(calc, kind, f){
     lines.push('Колір ручки: '+colorValue(f.handleColor,f.handleColorCustom));
     if(calc.series && /^alum/i.test(calc.series.name)) lines.push('Колір профілю: '+colorValue(f.profileColor,f.profileColorCustom));
   }
-  if(calc.widthSurchargeAmount>0) lines.push('Надбавка за ширину свыше '+calc.series.widthSurcharge.baseWidth+'мм: +'+calc.extraWidthPercent+'% ('+money(calc.widthSurchargeAmount)+' '+CUR+')');
+  if(calc.widthSurchargeAmount>0) lines.push('Надбавка за ширину свыше '+calc.series.widthSurcharge.baseWidth+'мм: +'+(Math.round(calc.extraWidthPercent*100)/100)+'% ('+money(calc.widthSurchargeAmount)+' '+CUR+')');
   calc.extras.forEach(e=> lines.push(e.name+(e.qty?' × '+e.qty:'')+' (+'+money(e.computed)+' '+CUR+')'));
   return lines;
 }
@@ -1389,8 +1393,8 @@ function renderCalcGeneric(kind){
     ` : ''}
 
     <div class="row2">
-      <div class="field"><label>Ширина, мм</label><input type="text" inputmode="decimal" id="${prefix}_width" value="${esc(f.width)}" placeholder="800"></div>
-      <div class="field"><label>Высота, мм</label><input type="text" inputmode="decimal" id="${prefix}_height" value="${esc(f.height)}" placeholder="2100"></div>
+      <div class="field"><label>Ширина, мм</label><input type="text" inputmode="decimal" id="${prefix}_width" value="${esc(f.width)}" placeholder="800"><div class="fhint" style="color:#b00020;">Шаг 5мм — размер округляется автоматически</div></div>
+      <div class="field"><label>Высота, мм</label><input type="text" inputmode="decimal" id="${prefix}_height" value="${esc(f.height)}" placeholder="2100"><div class="fhint" style="color:#b00020;">Шаг 5мм — размер округляется автоматически</div></div>
     </div>
 
     ${calc && calc.incomplete ? `<div class="notice-info">Введите ширину и высоту, чтобы увидеть цену.</div>` : ''}
@@ -1884,6 +1888,9 @@ function buildSpecFromInvoice(invoice){
         e.finish = (item.details&&item.details[0]) || '';
       }
       entries.push(e);
+      if(item.spec && item.spec.widthSurchargeAmount>0){
+        entries.push({id:uid(), type:'note', text:'Опція: надбавка за ширину понад '+item.spec.widthSurchargeBase+'мм +'+(Math.round(item.spec.widthSurchargePercent*100)/100)+'% ('+money(item.spec.widthSurchargeAmount)+' '+CUR+')'});
+      }
     }
   });
   entries.push({id:uid(), type:'note', text:'Шильда WD'});
@@ -1958,6 +1965,9 @@ function buildTrimSpecFromInvoice(invoice){
       entries.push(e);
       if(sp.dobirnaPlankaAmount>0){
         entries.push({id:uid(), type:'note', text:'Опція: добірна планка до '+sp.dobirnaPlankaThreshold+'мм +'+money(sp.dobirnaPlankaAmount)+' '+CUR});
+      }
+      if(sp.widthSurchargeAmount>0){
+        entries.push({id:uid(), type:'note', text:'Опція: надбавка за ширину понад '+sp.widthSurchargeBase+'мм +'+(Math.round(sp.widthSurchargePercent*100)/100)+'% ('+money(sp.widthSurchargeAmount)+' '+CUR+')'});
       }
     }
   });
@@ -2567,9 +2577,17 @@ function attachHandlers(){
       if(elChangeModel) elChangeModel.onclick = ()=>{ f.trimModelImageId=''; render(); };
     }
     const elWidth = document.getElementById(prefix+'_width');
-    if(elWidth) elWidth.oninput = ()=>{ f.width=elWidth.value; render(); };
+    if(elWidth){
+      elWidth.oninput = ()=>{ f.width=elWidth.value; _suppressDimBlur=true; render(); setTimeout(()=>{ _suppressDimBlur=false; },0); };
+      elWidth.onblur = ()=>{ if(_suppressDimBlur) return; setTimeout(()=>{ const r=roundTo5(f.width); if(r!=null && String(r)!==f.width){ f.width=String(r); render(); } }, 0); };
+      elWidth.onkeydown = (e)=>{ if(e.key==='Enter') elWidth.blur(); };
+    }
     const elHeight = document.getElementById(prefix+'_height');
-    if(elHeight) elHeight.oninput = ()=>{ f.height=elHeight.value; render(); };
+    if(elHeight){
+      elHeight.oninput = ()=>{ f.height=elHeight.value; _suppressDimBlur=true; render(); setTimeout(()=>{ _suppressDimBlur=false; },0); };
+      elHeight.onblur = ()=>{ if(_suppressDimBlur) return; setTimeout(()=>{ const r=roundTo5(f.height); if(r!=null && String(r)!==f.height){ f.height=String(r); render(); } }, 0); };
+      elHeight.onkeydown = (e)=>{ if(e.key==='Enter') elHeight.blur(); };
+    }
     const elManual = document.getElementById(prefix+'_manualprice');
     if(elManual) elManual.oninput = ()=>{ f.manualPrice=elManual.value; render(); };
     const elHingeType = document.getElementById(prefix+'_hingetype');
@@ -2672,7 +2690,10 @@ function attachHandlers(){
         lockType: f.lockType, lockCustomText: f.lockCustomText,
         lockColor: colorValue(f.lockColor,f.lockColorCustom),
         sealColor: colorValue(f.sealColor,f.sealColorCustom),
-        handleModel: f.handleModel, handleColor: colorValue(f.handleColor,f.handleColorCustom)
+        handleModel: f.handleModel, handleColor: colorValue(f.handleColor,f.handleColorCustom),
+        widthSurchargeAmount: calc.widthSurchargeAmount||0,
+        widthSurchargePercent: calc.extraWidthPercent||0,
+        widthSurchargeBase: (calc.series && calc.series.widthSurcharge) ? calc.series.widthSurcharge.baseWidth : 0
       };
     } else if(kind==='trim'){
       item.spec = {
@@ -2686,6 +2707,9 @@ function attachHandlers(){
         trimPlankWidth: f.trimPlankWidth||'',
         dobirnaPlankaAmount: calc.dobirnaPlankaAmount||0,
         dobirnaPlankaThreshold: calc.dobirnaPlankaThreshold||0,
+        widthSurchargeAmount: calc.widthSurchargeAmount||0,
+        widthSurchargePercent: calc.extraWidthPercent||0,
+        widthSurchargeBase: (calc.series && calc.series.widthSurcharge) ? calc.series.widthSurcharge.baseWidth : 0,
         lyshtvaSets: f.lyshtvaSets||'2',
         doorColorRal: f.doorColorRal||'',
         sealColor: colorValue(f.sealColor,f.sealColorCustom),
@@ -2774,7 +2798,7 @@ function attachHandlers(){
   document.querySelectorAll('[data-ws-field]').forEach(inp=> {
     const handler = async ()=>{
       const s = state.series.find(x=>x.id===inp.dataset.seriesId); if(!s) return;
-      if(!s.widthSurcharge) s.widthSurcharge = {enabled:false, baseWidth:800, step:100, percent:15, maxWidth:1100};
+      if(!s.widthSurcharge) s.widthSurcharge = {enabled:false, baseWidth:815, step:100, percent:15, maxWidth:1100};
       const f = inp.dataset.wsField;
       s.widthSurcharge[f] = (f==='enabled') ? inp.checked : (parseFloat(inp.value)||0);
       await storeSet(KEYS.series, state.series); render();
@@ -2827,7 +2851,7 @@ function attachHandlers(){
     await storeSet(KEYS.series, state.series); render();
   });
   document.querySelectorAll('[data-add-series]').forEach(btn=> btn.onclick = async ()=>{
-    state.series.push({id:uid(), name:'Новая серия', kind:btn.dataset.addSeries, note:'', widthSurcharge:null, tiers:[], rows:[]});
+    state.series.push({id:uid(), name:'Новая серия', kind:btn.dataset.addSeries, note:'', widthSurcharge:{enabled:true, baseWidth:815, step:100, percent:15, maxWidth:1100}, tiers:[], rows:[]});
     await storeSet(KEYS.series, state.series); render();
   });
   document.querySelectorAll('[data-del-series]').forEach(b=> b.onclick = async ()=>{
@@ -3255,6 +3279,15 @@ document.getElementById('tabs').addEventListener('click', (e)=>{
   if(state.tab!=='specs'){ state.viewSpecId = null; state.specPicker = false; state.notePickerOpen = false; }
   window.scrollTo(0, 0); // переключення вкладки — завжди починаємо згори, а не там, де було раніше
   render();
+});
+
+// Клік будь-де поза полем "Ширина"/"Висота" — примусово знімаємо з нього фокус, щоб округлення
+// до 5мм спрацьовувало навіть при кліку на порожнє місце сторінки, а не лише на інше поле.
+document.addEventListener('click', (e)=>{
+  const active = document.activeElement;
+  if(active && active.id && /_(width|height)$/.test(active.id) && !e.target.closest(`#${active.id}`)){
+    active.blur();
+  }
 });
 
 (async function init(){ await loadAll(); render(); })();
