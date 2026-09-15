@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-<title>Двери — калькулятор и счета</title>
+<title>Двері — калькулятор і рахунки</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -218,22 +218,22 @@
     <line x1="7" y1="3" x2="7" y2="27" stroke="#A6552E" stroke-width="1.6"/>
   </svg>
   <div class="titles">
-    <h1 id="companyHeaderName">Двери — калькулятор</h1>
-    <div class="sub">Скрытый монтаж · С наличником</div>
+    <h1 id="companyHeaderName">Двері — калькулятор</h1>
+    <div class="sub">Прихований монтаж · Зі лиштвою</div>
   </div>
 </div>
 
 <div class="tabs" id="tabs">
-  <button class="tab" data-tab="calcHidden">Скрытый монтаж</button>
-  <button class="tab" data-tab="calcTrim">С наличником</button>
-  <button class="tab" data-tab="object">Текущий объект</button>
-  <button class="tab" data-tab="invoices">Счета</button>
-  <button class="tab" data-tab="specs">Спецификации</button>
+  <button class="tab" data-tab="calcHidden">Прихований монтаж</button>
+  <button class="tab" data-tab="calcTrim">Зі лиштвою</button>
+  <button class="tab" data-tab="object">Поточний об'єкт</button>
+  <button class="tab" data-tab="invoices">Рахунки</button>
+  <button class="tab" data-tab="specs">Специфікації</button>
   <button class="tab" data-tab="prices">Прайс-лист</button>
-  <button class="tab" data-tab="company">Реквизиты</button>
+  <button class="tab" data-tab="company">Реквізити</button>
 </div>
 
-<main id="app">Загрузка…</main>
+<main id="app">Завантаження…</main>
 
 <script>
 (function(){
@@ -292,6 +292,12 @@ async function storeSet(key, value){
 }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function roundTo5(v){ const n=parseFloat(v); if(!isFinite(n)) return null; return Math.round(n/5)*5; }
+function widthSurchargeDisplayThreshold(base, steps){
+  // Пороги для ТЕКСТУ (не для самого розрахунку): 815 → 900 → 1000 → 1100 — перший крок нерівний (85мм),
+  // далі рівними сотнями.
+  if(!steps || steps<=1) return base;
+  return 900 + (steps-2)*100;
+}
 let _suppressDimBlur = false; // true під час перемальовування, яке ми самі запустили через oninput — щоб не плутати це зі справжньою втратою фокусу користувачем
 function getActiveCompany(){ return state.companies.find(c=>c.id===state.activeCompanyId) || state.companies[0] || {name:'',requisites:'',phone:'',address:''}; }
 function money(n){ return (Math.round((n||0)*100)/100).toLocaleString('ru-RU',{minimumFractionDigits:0,maximumFractionDigits:2}); }
@@ -561,7 +567,7 @@ const SEED_HIDDEN_EXTRAS = [
   {id:uid(), name:'Фарбування МДФ полотна темніше за RAL 7038', price:25, unit:'fixed'},
   {id:uid(), name:'Сатинування скла', price:25, unit:'sqm'},
   {id:uid(), name:'Врізка під замок замовника (без гарантії)', price:0, unit:'fixed'},
-  {id:uid(), name:'Врізка під петлю замовника (без гарантії)', price:0, unit:'fixed'},
+  {id:uid(), name:'Врізка під завісу замовника (без гарантії)', price:0, unit:'fixed'},
 ];
 
 const SEED_TRIM_EXTRAS = [
@@ -1090,11 +1096,12 @@ function computeSeriesCalc(f, kind){
 
   // Width-over-base surcharge — накопичувально (відсоток на відсоток): кожні наступні ws.step мм
   // додають ще ws.percent% вже до ціни з попередньою надбавкою, а не до початкової базової ціни.
-  let extraWidthPercent = 0, widthSurchargeAmount = 0;
+  let extraWidthPercent = 0, widthSurchargeAmount = 0, widthSurchargeSteps = 0;
   const ws = series.widthSurcharge;
   if(!oversize && ws && ws.enabled && w>ws.baseWidth){
     const cappedW = Math.min(w, ws.maxWidth);
     const steps = Math.ceil((cappedW-ws.baseWidth)/ws.step);
+    widthSurchargeSteps = steps;
     const multiplier = Math.pow(1+ws.percent/100, steps);
     extraWidthPercent = (multiplier-1)*100; // ефективний сумарний % — для показу в деталях/специфікації
     widthSurchargeAmount = basePrice*(multiplier-1);
@@ -1136,19 +1143,19 @@ function computeSeriesCalc(f, kind){
 
   const unit = basePrice + alumFrameAmount + widthSurchargeAmount + openingAddon + dobirnaPlankaAmount + extrasTotal;
   return {series, row, w, h, tier, oversize, basePrice, hingeType, hingeQty, hingeQtyDefault, hingeTypeDefault,
-          alumFrameAmount, extraWidthPercent, widthSurchargeAmount, openingAddon, dobirnaPlankaAmount, dobirnaPlankaThreshold, extras, extrasTotal, unit};
+          alumFrameAmount, extraWidthPercent, widthSurchargeAmount, widthSurchargeSteps, openingAddon, dobirnaPlankaAmount, dobirnaPlankaThreshold, extras, extrasTotal, unit};
 }
 function buildDetails(calc, kind, f){
   const lines = [];
   if((kind==='hidden' || (kind==='trim' && f.faceFinish)) && f.faceFinish && f.backFinish){
-    lines.push('Отделка: '+(f.faceFinish===f.backFinish ? f.faceFinish : 'лицо — '+f.faceFinish+', тыл — '+f.backFinish));
+    lines.push('Оздоблення: '+(f.faceFinish===f.backFinish ? f.faceFinish : 'лицьова — '+f.faceFinish+', тильна — '+f.backFinish));
   } else {
-    lines.push((kind==='hidden'?'Отделка: ':'Модель: ')+calc.row.finishLabel);
+    lines.push((kind==='hidden'?'Оздоблення: ':'Модель: ')+calc.row.finishLabel);
   }
-  lines.push(calc.oversize ? 'НЕСТАНДАРТНЫЙ РАЗМЕР — цена согласована вручную' : 'Размерная группа: '+calc.tier.label);
-  if(calc.hingeType) lines.push('Петли: '+hingeName(calc.hingeType)+' × '+calc.hingeQty+(kind==='hidden' && f.hingeColor?', цвет '+colorValue(f.hingeColor,f.hingeColorCustom):''));
+  lines.push(calc.oversize ? 'НЕСТАНДАРТНИЙ РОЗМІР — ціна погоджена вручну' : 'Розмірна група: '+calc.tier.label);
+  if(calc.hingeType) lines.push('Завіси: '+hingeName(calc.hingeType)+' × '+calc.hingeQty+(kind==='hidden' && f.hingeColor?', колір '+colorValue(f.hingeColor,f.hingeColorCustom):''));
   if(kind==='hidden'){
-    lines.push('Открывание: '+(f.opening==='inside'?'інсайд':'звичайне')+', сторона: '+(f.openingSide==='right'?'праве':'ліве'));
+    lines.push('Відкривання: '+(f.opening==='inside'?'інсайд':'звичайне')+', сторона: '+(f.openingSide==='right'?'праве':'ліве'));
     lines.push('Колір профілю: '+colorValue(f.profileColor,f.profileColorCustom));
     lines.push('Замок: '+f.lockType+(f.lockType==='Замок замовника' && f.lockCustomText ? ' — '+f.lockCustomText+' (без гарантії)' : '')+', колір: '+colorValue(f.lockColor,f.lockColorCustom));
     lines.push('Колір ущільнювача: '+colorValue(f.sealColor,f.sealColorCustom));
@@ -1158,8 +1165,8 @@ function buildDetails(calc, kind, f){
     const modelCatalog = getTrimModelCatalog();
     const pickedModel = modelCatalog.find(r=>r.id===f.trimModelImageId);
     if(pickedModel) lines.push('Дизайн полотна: '+pickedModel.finishLabel);
-    lines.push('Открывання: '+(f.opening==='inside'?'інсайд':'звичайне')+', сторона: '+(f.openingSide==='right'?'права':'ліва')+' (колекція '+calc.series.name+')'+(calc.openingAddon>0?' (+'+money(calc.openingAddon)+' '+CUR+')':''));
-    if(f.openingDepth) lines.push('Глибина проёму: '+f.openingDepth+'мм, добірна планка: '+(f.trimPlankWidth||'—'));
+    lines.push('Відкривання: '+(f.opening==='inside'?'інсайд':'звичайне')+', сторона: '+(f.openingSide==='right'?'права':'ліва')+' (колекція '+calc.series.name+')'+(calc.openingAddon>0?' (+'+money(calc.openingAddon)+' '+CUR+')':''));
+    if(f.openingDepth) lines.push('Глибина отвору: '+f.openingDepth+'мм, добірна планка: '+(f.trimPlankWidth||'—'));
     if(calc.dobirnaPlankaAmount>0) lines.push('Опція: добірна планка до '+calc.dobirnaPlankaThreshold+'мм +'+money(calc.dobirnaPlankaAmount)+' '+CUR);
     lines.push('Лиштва: '+(f.lyshtvaSets||'2')+' компл.');
     if(calc.alumFrameAmount>0) lines.push('Надбавка за алюмінієвий каркас: +'+money(calc.alumFrameAmount)+' '+CUR);
@@ -1169,11 +1176,11 @@ function buildDetails(calc, kind, f){
     if(calc.row && calc.row.modelGroup==='b') lines.push('Колір скла: '+colorValue(f.glassColor,f.glassColorCustom));
     lines.push('Колір ущільнювача: '+colorValue(f.sealColor,f.sealColorCustom));
     lines.push('Колір замку: '+colorValue(f.lockColor,f.lockColorCustom));
-    lines.push('Колір петель: '+colorValue(f.hingeColor,f.hingeColorCustom));
+    lines.push('Колір завіс: '+colorValue(f.hingeColor,f.hingeColorCustom));
     lines.push('Колір ручки: '+colorValue(f.handleColor,f.handleColorCustom));
     if(calc.series && /^alum/i.test(calc.series.name)) lines.push('Колір профілю: '+colorValue(f.profileColor,f.profileColorCustom));
   }
-  if(calc.widthSurchargeAmount>0) lines.push('Надбавка за ширину свыше '+calc.series.widthSurcharge.baseWidth+'мм: +'+(Math.round(calc.extraWidthPercent*100)/100)+'% ('+money(calc.widthSurchargeAmount)+' '+CUR+')');
+  if(calc.widthSurchargeAmount>0) lines.push('Надбавка за ширину понад '+widthSurchargeDisplayThreshold(calc.series.widthSurcharge.baseWidth, calc.widthSurchargeSteps)+'мм: +'+(Math.round(calc.extraWidthPercent*100)/100)+'% ('+money(calc.widthSurchargeAmount)+' '+CUR+')');
   calc.extras.forEach(e=> lines.push(e.name+(e.qty?' × '+e.qty:'')+' (+'+money(e.computed)+' '+CUR+')'));
   return lines;
 }
@@ -1189,7 +1196,7 @@ function render(){
   const scrollY = window.scrollY;
 
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===state.tab));
-  document.getElementById('companyHeaderName').textContent = getActiveCompany().name || 'Двери — калькулятор';
+  document.getElementById('companyHeaderName').textContent = getActiveCompany().name || 'Двері — калькулятор';
   if(state.tab==='calcHidden') app.innerHTML = renderCalcGeneric('hidden');
   else if(state.tab==='calcTrim') app.innerHTML = renderCalcGeneric('trim');
   else if(state.tab==='object') app.innerHTML = renderObject();
@@ -1211,7 +1218,7 @@ function renderCalcGeneric(kind){
   const f = kind==='hidden' ? state.hf : state.tf;
   const pool = state.series.filter(s=>s.kind===kind);
   if(!pool.length){
-    return `<div class="card empty"><p><strong>Нет ни одной серии.</strong></p><p>Добавьте серию во вкладке «Прайс-лист».</p></div>`;
+    return `<div class="card empty"><p><strong>Нет ни одной серии.</strong></p><p>Додайте серію у вкладці «Прайс-лист».</p></div>`;
   }
   let series, trimPool;
   if(kind==='trim'){
@@ -1235,13 +1242,13 @@ function renderCalcGeneric(kind){
   }
   const calc = computeSeriesCalc(f, kind);
   const extrasCatalog = kind==='hidden' ? state.hiddenExtras : state.trimExtras;
-  const seriesLabel = kind==='hidden' ? 'Профиль' : 'Коллекция';
-  const rowLabel = kind==='hidden' ? 'Отделка (комбинация сторон)' : 'Модель';
+  const seriesLabel = kind==='hidden' ? 'Профіль' : 'Колекція';
+  const rowLabel = kind==='hidden' ? 'Оздоблення (комбінація сторін)' : 'Модель';
   const showHinges = calc && !calc.incomplete && (calc.hingeTypeDefault || calc.hingeType);
 
   return `
   <div class="card">
-    <div class="card-title">${kind==='hidden'?'Скрытый монтаж':'С наличником'} — расчёт</div>
+    <div class="card-title">${kind==='hidden'?'Прихований монтаж':'Зі лиштвою'} — розрахунок</div>
 
     ${kind==='trim' ? `
     <div class="trim-layout">
@@ -1249,8 +1256,8 @@ function renderCalcGeneric(kind){
         <div class="field">
           <label>Відкривання</label>
           <div class="seg seg-vertical seg-sm">
-            <button type="button" data-opening="self" class="${f.opening==='self'?'active':''}">На себя</button>
-            <button type="button" data-opening="inside" class="${f.opening==='inside'?'active':''}">Инсайд</button>
+            <button type="button" data-opening="self" class="${f.opening==='self'?'active':''}">На себе</button>
+            <button type="button" data-opening="inside" class="${f.opening==='inside'?'active':''}">Інсайд</button>
           </div>
         </div>
         <div class="field">
@@ -1338,7 +1345,7 @@ function renderCalcGeneric(kind){
       <div class="field">
         <label>${rowLabel}</label>
         <select id="${prefix}_row">${rows.map(r=>`<option value="${r.id}" ${r.id===f.rowId?'selected':''}>${esc(r.finishLabel)}</option>`).join('')}</select>
-      </div>` : `<div class="notice">В этой серии пока нет ни одной строки — добавьте их в «Прайс-лист».</div>`}
+      </div>` : `<div class="notice">У цій серії поки немає жодного рядка — додайте їх у «Прайс-лист».</div>`}
     </div>
     `}
 
@@ -1355,7 +1362,7 @@ function renderCalcGeneric(kind){
           <label>Оздоблення (обидві сторони)</label>
           <input type="text" id="${prefix}_facefinish" value="${esc(f.faceFinish)}" placeholder="напр. RAL 9010">
         </div>
-        <div class="fhint" style="margin:-8px 0 12px; font-size:9.5px;">На цьому профілі відсутня можливість різної відделки з двох сторін — обидві сторони завжди однакові.</div>`;
+        <div class="fhint" style="margin:-8px 0 12px; font-size:9.5px;">На цьому профілі відсутня можливість різного оздоблення з двох сторін — обидві сторони завжди однакові.</div>`;
       }
       return `
       <div class="field">
@@ -1363,53 +1370,53 @@ function renderCalcGeneric(kind){
         <input type="text" id="${prefix}_facefinish" value="${esc(f.faceFinish)}" placeholder="напр. RAL 9010">
       </div>
       <div style="display:flex; justify-content:center; margin:-6px 0 8px;">
-        <button type="button" class="btn btn-ghost btn-sm" id="${prefix}_swapfinish">⇄ Поменять сторони місцями</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="${prefix}_swapfinish">⇄ Поміняти сторони місцями</button>
       </div>
       <div class="field">
         <label>Оздоблення — тильна сторона</label>
         <input type="text" id="${prefix}_backfinish" value="${esc(f.backFinish)}" placeholder="напр. Дзеркало срібло">
       </div>
-      <div class="fhint" style="margin:-8px 0 12px;">По умолчанию подставлено из прайса (${esc(curRow.finishLabel)}) — можно вписать любую отделку и цвет для каждой стороны отдельно, на цену это не влияет.</div>`;
+      <div class="fhint" style="margin:-8px 0 12px;">За замовчуванням підставлено з прайсу (${esc(curRow.finishLabel)}) — можна вписати будь-яке оздоблення і колір для кожної сторони окремо, на ціну це не впливає.</div>`;
     })() : ''}
 
     ${kind==='hidden' ? `
     <div class="row3">
       <div class="field">
-        <label>Открывание</label>
+        <label>Відкривання</label>
         <div class="seg">
-          <button type="button" data-hopening="normal" class="${f.opening==='normal'?'active':''}" ${!series.allowNormalOpening?'disabled':''}>Обычное</button>
-          <button type="button" data-hopening="inside" class="${f.opening==='inside'?'active':''}" ${!series.allowInsideOpening?'disabled':''}>Инсайд</button>
+          <button type="button" data-hopening="normal" class="${f.opening==='normal'?'active':''}" ${!series.allowNormalOpening?'disabled':''}>Звичайне</button>
+          <button type="button" data-hopening="inside" class="${f.opening==='inside'?'active':''}" ${!series.allowInsideOpening?'disabled':''}>Інсайд</button>
         </div>
       </div>
       <div class="field">
-        <label>Сторона открывания</label>
+        <label>Сторона відкривання</label>
         <div class="seg">
           <button type="button" data-hside="left" class="${f.openingSide!=='right'?'active':''}">Ліве</button>
           <button type="button" data-hside="right" class="${f.openingSide==='right'?'active':''}">Праве</button>
         </div>
       </div>
-      ${colorField(prefix,'profileColor','Цвет профиля',['Чорний (9005)','Сірий (Анодований)'],f.profileColor,f.profileColorCustom)}
+      ${colorField(prefix,'profileColor','Колір профілю',['Чорний (9005)','Сірий (Анодований)'],f.profileColor,f.profileColorCustom)}
     </div>
     ` : ''}
 
     <div class="row2">
-      <div class="field"><label>Ширина, мм</label><input type="text" inputmode="decimal" id="${prefix}_width" value="${esc(f.width)}" placeholder="800"><div class="fhint" style="color:#b00020;">Шаг 5мм — размер округляется автоматически</div></div>
-      <div class="field"><label>Высота, мм</label><input type="text" inputmode="decimal" id="${prefix}_height" value="${esc(f.height)}" placeholder="2100"><div class="fhint" style="color:#b00020;">Шаг 5мм — размер округляется автоматически</div></div>
+      <div class="field"><label>Ширина, мм</label><input type="text" inputmode="decimal" id="${prefix}_width" value="${esc(f.width)}" placeholder="800"><div class="fhint" style="color:#b00020;">Крок 5мм — розмір округлюється автоматично</div></div>
+      <div class="field"><label>Висота, мм</label><input type="text" inputmode="decimal" id="${prefix}_height" value="${esc(f.height)}" placeholder="2100"><div class="fhint" style="color:#b00020;">Крок 5мм — розмір округлюється автоматично</div></div>
     </div>
 
-    ${calc && calc.incomplete ? `<div class="notice-info">Введите ширину и высоту, чтобы увидеть цену.</div>` : ''}
+    ${calc && calc.incomplete ? `<div class="notice-info">Введіть ширину і висоту, щоб побачити ціну.</div>` : ''}
     ${calc && !calc.incomplete && calc.oversize ? `
-      <div class="notice">Размер выходит за пределы прайса для этой строки. Это нестандартная дверь — впишите согласованную цену вручную.</div>
-      <div class="field" style="max-width:200px;"><label>Цена вручную, ${CUR}</label><input type="text" inputmode="decimal" id="${prefix}_manualprice" value="${esc(f.manualPrice)}"></div>
+      <div class="notice">Розмір виходить за межі прайсу для цього рядка. Це нестандартні двері — впишіть погоджену ціну вручну.</div>
+      <div class="field" style="max-width:200px;"><label>Ціна вручну, ${CUR}</label><input type="text" inputmode="decimal" id="${prefix}_manualprice" value="${esc(f.manualPrice)}"></div>
     ` : ''}
 
     ${showHinges ? `
     <div class="row2">
       <div class="field">
-        <label>Петли</label>
+        <label>Завіси</label>
         <select id="${prefix}_hingetype">${state.hingeRef.filter(h=> kind==='hidden' || h.code==='HF').map(h=>`<option value="${h.code}" ${h.code===calc.hingeType?'selected':''}>${esc(h.name)}${h.maxWeightPair?' (до '+h.maxWeightPair+'кг/пара)':''}</option>`).join('')}</select>
       </div>
-      <div class="field"><label>Кол-во петель</label><input type="text" inputmode="numeric" id="${prefix}_hingeqty" value="${calc.hingeQty}"></div>
+      <div class="field"><label>Кіл-сть завіс</label><input type="text" inputmode="numeric" id="${prefix}_hingeqty" value="${calc.hingeQty}"></div>
     </div>
     ` : ''}
 
@@ -1422,23 +1429,23 @@ function renderCalcGeneric(kind){
         </select>
         ${f.lockType==='Замок замовника' ? `<input type="text" id="${prefix}_lockCustomText" value="${esc(f.lockCustomText||'')}" placeholder="Який замок врізати (модель/опис)" style="margin-top:6px;"><div class="fhint">Замок клієнта — врізаємо отвір, гарантія на цей замок не поширюється.</div>` : ''}
       </div>
-      ${colorField(prefix,'lockColor','Цвет замка',['Сірий','Чорний'],f.lockColor,f.lockColorCustom)}
-      ${colorField(prefix,'hingeColor','Цвет петель',['Сірий','Чорний'],f.hingeColor,f.hingeColorCustom)}
-      ${colorField(prefix,'sealColor','Цвет уплотнителя',['Білий','Сірий','Чорний'],f.sealColor,f.sealColorCustom)}
+      ${colorField(prefix,'lockColor','Колір замка',['Сірий','Чорний'],f.lockColor,f.lockColorCustom)}
+      ${colorField(prefix,'hingeColor','Колір завіс',['Сірий','Чорний'],f.hingeColor,f.hingeColorCustom)}
+      ${colorField(prefix,'sealColor','Колір ущільнювача',['Білий','Сірий','Чорний'],f.sealColor,f.sealColorCustom)}
     </div>
     <div class="row2">
       <div class="field">
         <label>Ручка</label>
         <select id="${prefix}_handlemodel">${['Ручка 1','Ручка 2','Ручка 3'].map(o=>`<option value="${esc(o)}" ${f.handleModel===o?'selected':''}>${esc(o)}</option>`).join('')}</select>
       </div>
-      ${colorField(prefix,'handleColor','Цвет ручки',['Сірий','Чорний'],f.handleColor,f.handleColorCustom)}
+      ${colorField(prefix,'handleColor','Колір ручки',['Сірий','Чорний'],f.handleColor,f.handleColorCustom)}
     </div>
     ` : ''}
 
     ${kind==='trim' && series && series.insideOpeningAddon!=null ? `
     <div class="row2">
       <div class="field">
-        <label>Глибина проёму, мм</label>
+        <label>Глибина отвору, мм</label>
         <input type="text" inputmode="decimal" id="${prefix}_openingdepth" value="${esc(f.openingDepth)}" placeholder="напр. 250">
       </div>
       <div class="field">
@@ -1483,7 +1490,7 @@ function renderCalcGeneric(kind){
     <div class="row4">
       ${colorField(prefix,'sealColor','Колір ущільнювача',['Білий','Сірий','Чорний'],f.sealColor,f.sealColorCustom)}
       ${colorField(prefix,'lockColor','Колір замку',['Сірий','Чорний'],f.lockColor,f.lockColorCustom)}
-      ${colorField(prefix,'hingeColor','Колір петель',['Сірий','Чорний'],f.hingeColor,f.hingeColorCustom)}
+      ${colorField(prefix,'hingeColor','Колір завіс',['Сірий','Чорний'],f.hingeColor,f.hingeColorCustom)}
       ${colorField(prefix,'handleColor','Колір ручки',['Сірий','Чорний'],f.handleColor,f.handleColorCustom)}
     </div>
     ${series && /^alum/i.test(series.name) ? colorField(prefix,'profileColor','Колір профілю',['Сірий','Чорний'],f.profileColor,f.profileColorCustom) : ''}
@@ -1491,7 +1498,7 @@ function renderCalcGeneric(kind){
 
     ${extrasCatalog.length ? `
     <div class="field">
-      <label>Доп. опции</label>
+      <label>Дод. опції</label>
       <div class="chk-list">
         ${extrasCatalog.map(e=>{
           if(e.unit==='perUnit'){
@@ -1506,16 +1513,16 @@ function renderCalcGeneric(kind){
       </div>
     </div>` : ''}
 
-    <div class="field" style="max-width:140px;"><label>Количество дверей</label><input type="text" inputmode="numeric" id="${prefix}_qty" value="${esc(f.qty)}"></div>
+    <div class="field" style="max-width:140px;"><label>Кількість дверей</label><input type="text" inputmode="numeric" id="${prefix}_qty" value="${esc(f.qty)}"></div>
 
     ${calc && !calc.incomplete ? `
-    <div class="price-preview"><div><div class="label">Цена за 1 шт</div></div><div class="amount">${money(calc.unit)} ${CUR}</div></div>
+    <div class="price-preview"><div><div class="label">Ціна за 1 шт</div></div><div class="amount">${money(calc.unit)} ${CUR}</div></div>
     <div class="price-preview" style="background:transparent; border:1px dashed var(--line); color:var(--ink);">
-      <div class="label" style="color:var(--ink-soft);">Итого за ${f.qty||1} шт</div>
+      <div class="label" style="color:var(--ink-soft);">Разом за ${f.qty||1} шт</div>
       <div class="amount" style="color:var(--copper-dark);">${money(calc.unit*(parseInt(f.qty)||1))} ${CUR}</div>
     </div>` : ''}
 
-    <button class="btn btn-primary" data-add-item="${kind}" ${(!calc || calc.incomplete || !rows.length)?'disabled':''}>Добавить в объект →</button>
+    <button class="btn btn-primary" data-add-item="${kind}" ${(!calc || calc.incomplete || !rows.length)?'disabled':''}>Додати в об'єкт →</button>
   </div>`;
 }
 
@@ -1525,22 +1532,22 @@ function renderObject(){
   const total = items.reduce((s,i)=>s+i.unit*i.qty,0);
   return `
   <div class="card">
-    <div class="card-title">Данные объекта</div>
+    <div class="card-title">Дані об'єкта</div>
     <div class="row2">
-      <div class="field"><label>Клиент</label><input id="o_client" value="${esc(o.client)}" placeholder="ФИО или компания"></div>
-      <div class="field"><label>Объект / адрес</label><input id="o_object" value="${esc(o.object)}" placeholder="Адрес монтажа"></div>
+      <div class="field"><label>Клієнт</label><input id="o_client" value="${esc(o.client)}" placeholder="ПІБ або компанія"></div>
+      <div class="field"><label>Об'єкт / адреса</label><input id="o_object" value="${esc(o.object)}" placeholder="Адреса монтажу"></div>
     </div>
   </div>
   <div class="card">
-    <div class="card-title">Двери в этом объекте (${items.length})</div>
-    ${items.length===0 ? `<div class="empty"><p>Список пуст.</p><p>Перейдите в калькулятор и добавьте первую дверь.</p></div>` : `
+    <div class="card-title">Двері в цьому об'єкті (${items.length})</div>
+    ${items.length===0 ? `<div class="empty"><p>Список порожній.</p><p>Перейдіть у калькулятор і додайте перші двері.</p></div>` : `
     <div style="overflow-x:auto;">
     <table>
-      <thead><tr><th>Тип / серия</th><th>Размер</th><th>Детали</th><th>Кол-во</th><th>Цена/шт</th><th>Сумма</th><th></th></tr></thead>
+      <thead><tr><th>Тип / серія</th><th>Розмір</th><th>Деталі</th><th>Кіл-сть</th><th>Ціна/шт</th><th>Сума</th><th></th></tr></thead>
       <tbody>
         ${items.map(i=>`
         <tr>
-          <td>${esc(i.title)}<br><span class="badge ${i.mount==='hidden'?'badge-hidden':'badge-trim'}">${i.mount==='hidden'?'скрытый':'наличник'}</span></td>
+          <td>${esc(i.title)}<br><span class="badge ${i.mount==='hidden'?'badge-hidden':'badge-trim'}">${i.mount==='hidden'?'прихований':'лиштва'}</span></td>
           <td class="mono">${i.w}×${i.h}</td>
           <td class="details-cell">${i.details.map(esc).join('<br>')}</td>
           <td class="num">${i.qty}</td>
@@ -1548,13 +1555,13 @@ function renderObject(){
           <td class="num">${money(i.unit*i.qty)}</td>
           <td><button class="icon-btn" data-remove-item="${i.uid}">✕</button></td>
         </tr>`).join('')}
-        <tr class="total-row"><td colspan="5">Итого по объекту</td><td class="num">${money(total)} ${CUR}</td><td></td></tr>
+        <tr class="total-row"><td colspan="5">Разом по об'єкту</td><td class="num">${money(total)} ${CUR}</td><td></td></tr>
       </tbody>
     </table>
     </div>
     <div class="toolbar" style="margin-top:16px;">
-      <button class="btn btn-primary" id="btnMakeInvoice" ${items.length===0?'disabled':''}>Сформировать счёт</button>
-      <button class="btn btn-ghost" id="btnClearObject">Очистить объект</button>
+      <button class="btn btn-primary" id="btnMakeInvoice" ${items.length===0?'disabled':''}>Сформувати рахунок</button>
+      <button class="btn btn-ghost" id="btnClearObject">Очистити об'єкт</button>
     </div>`}
   </div>`;
 }
@@ -1564,33 +1571,33 @@ function renderPrices(){
   if(!state.pricesUnlocked){
     return `
     <div class="card" style="max-width:360px; margin:40px auto;">
-      <div class="card-title">Прайс-лист защищён</div>
-      <div class="field"><label>Пароль</label><input type="password" id="pricesPasswordInput" placeholder="Введите пароль"></div>
-      <div id="pricesPasswordError" style="color:#b00; font-size:13px; margin-bottom:8px; display:none;">Неверный пароль</div>
-      <button class="btn btn-primary" id="btnUnlockPrices">Войти</button>
+      <div class="card-title">Прайс-лист захищений</div>
+      <div class="field"><label>Пароль</label><input type="password" id="pricesPasswordInput" placeholder="Введіть пароль"></div>
+      <div id="pricesPasswordError" style="color:#b00; font-size:13px; margin-bottom:8px; display:none;">Невірний пароль</div>
+      <button class="btn btn-primary" id="btnUnlockPrices">Увійти</button>
     </div>`;
   }
   const hiddenSeries = state.series.filter(s=>s.kind==='hidden');
   const trimSeries = state.series.filter(s=>s.kind==='trim');
   return `
-  <div class="notice">Цены серий ниже перенесены из присланных прайс-листов (фото и PDF). Обязательно сверьте цифры с оригиналами перед тем как считать реальным клиентам.</div>
+  <div class="notice">Ціни серій нижче перенесені з надісланих прайс-листів (фото та PDF). Обов'язково звірте цифри з оригіналами перед тим як рахувати реальним клієнтам.</div>
 
   <div class="catalog-block">
-    <div class="toolbar"><h3>Серии скрытого монтажа</h3><button class="btn btn-ghost btn-sm" data-add-series="hidden">+ Добавить серию</button></div>
+    <div class="toolbar"><h3>Серії прихованого монтажу</h3><button class="btn btn-ghost btn-sm" data-add-series="hidden">+ Додати серію</button></div>
     ${hiddenSeries.map(s=>renderSeriesCard(s)).join('')}
   </div>
 
   <div class="catalog-block">
-    <div class="toolbar"><h3>Серии дверей с наличником</h3><button class="btn btn-ghost btn-sm" data-add-series="trim">+ Добавить серию</button></div>
+    <div class="toolbar"><h3>Серії дверей зі лиштвою</h3><button class="btn btn-ghost btn-sm" data-add-series="trim">+ Додати серію</button></div>
     ${trimSeries.map(s=>renderSeriesCard(s)).join('')}
   </div>
 
   <div class="catalog-block">
-    <div class="toolbar"><h3>Типы петель (справочник)</h3></div>
-    <div class="desc">Код используется в ячейках серий (K, An и т.д.).</div>
+    <div class="toolbar"><h3>Типи завіс (довідник)</h3></div>
+    <div class="desc">Код використовується в комірках серій (K, An і т.д.).</div>
     <div style="overflow-x:auto;">
     <table>
-      <thead><tr><th>Код</th><th>Название</th><th>Макс. вес на пару, кг</th><th></th></tr></thead>
+      <thead><tr><th>Код</th><th>Назва</th><th>Макс. вага на пару, кг</th><th></th></tr></thead>
       <tbody>
         ${state.hingeRef.map(h=>`
         <tr data-row="hingeRef" data-id="${h.id}">
@@ -1602,11 +1609,11 @@ function renderPrices(){
       </tbody>
     </table>
     </div>
-    <div class="toolbar" style="margin-top:10px;"><button class="btn btn-ghost btn-sm" data-add="hingeRef">+ Добавить тип петли</button></div>
+    <div class="toolbar" style="margin-top:10px;"><button class="btn btn-ghost btn-sm" data-add="hingeRef">+ Додати тип завіси</button></div>
   </div>
 
-  ${renderExtrasCatalog('hiddenExtras','Доп. опции скрытого монтажа')}
-  ${renderExtrasCatalog('trimExtras','Доп. опции для дверей с наличником')}
+  ${renderExtrasCatalog('hiddenExtras','Дод. опції прихованого монтажу')}
+  ${renderExtrasCatalog('trimExtras','Дод. опції для дверей зі лиштвою')}
   `;
 }
 
@@ -1617,15 +1624,15 @@ function renderSeriesCard(s){
   <div class="series-card" data-series-id="${s.id}">
     <div class="stop-row">
       <input class="sname" data-series-field="name" data-series-id="${s.id}" value="${esc(s.name)}">
-      <span class="mono" style="padding:8px 10px; color:var(--ink-soft); font-size:12px;">${s.kind==='hidden'?'Скрытый монтаж':'С наличником'}</span>
+      <span class="mono" style="padding:8px 10px; color:var(--ink-soft); font-size:12px;">${s.kind==='hidden'?'Прихований монтаж':'Зі лиштвою'}</span>
       <button class="icon-btn" data-del-series="${s.id}">✕ серию</button>
     </div>
-    <div class="field" style="margin-bottom:10px;"><textarea data-series-field="note" data-series-id="${s.id}" rows="1" style="font-size:12.5px; padding:6px 8px;" placeholder="Примечание / что входит в комплект">${esc(s.note||'')}</textarea></div>
-    ${s.kind==='hidden' ? `<div class="field" style="max-width:220px; margin-bottom:10px;"><label>Матриця каркасного профілю (для спецификации)</label><input data-series-field="frameMatrix" data-series-id="${s.id}" value="${esc(s.frameMatrix||'')}" placeholder="напр. 8670"></div>` : ''}
-    ${s.kind==='trim' && /^alum/i.test(s.name) ? `<div class="field" style="max-width:220px; margin-bottom:10px;"><label>Матриця алюмінієвого профілю (для спецификации)</label><input data-series-field="frameMatrix" data-series-id="${s.id}" value="${esc(s.frameMatrix||'')}" placeholder="напр. 8670"></div>` : ''}
+    <div class="field" style="margin-bottom:10px;"><textarea data-series-field="note" data-series-id="${s.id}" rows="1" style="font-size:12.5px; padding:6px 8px;" placeholder="Примітка / що входить у комплект">${esc(s.note||'')}</textarea></div>
+    ${s.kind==='hidden' ? `<div class="field" style="max-width:220px; margin-bottom:10px;"><label>Матриця каркасного профілю (для специфікації)</label><input data-series-field="frameMatrix" data-series-id="${s.id}" value="${esc(s.frameMatrix||'')}" placeholder="напр. 8670"></div>` : ''}
+    ${s.kind==='trim' && /^alum/i.test(s.name) ? `<div class="field" style="max-width:220px; margin-bottom:10px;"><label>Матриця алюмінієвого профілю (для специфікації)</label><input data-series-field="frameMatrix" data-series-id="${s.id}" value="${esc(s.frameMatrix||'')}" placeholder="напр. 8670"></div>` : ''}
 
     <div class="ws-box">
-      <label><input type="checkbox" data-ws-field="enabled" data-series-id="${s.id}" ${ws&&ws.enabled?'checked':''}> Надбавка за ширину сверх нормы (например +15% за каждые 100мм)</label>
+      <label><input type="checkbox" data-ws-field="enabled" data-series-id="${s.id}" ${ws&&ws.enabled?'checked':''}> Надбавка за ширину понад норму (наприклад +15% за кожні 100мм)</label>
       ${ws&&ws.enabled ? `
         <br style="margin-top:6px;">
         <label>База, мм <input type="number" data-ws-field="baseWidth" data-series-id="${s.id}" value="${ws.baseWidth}"></label>
@@ -1636,7 +1643,7 @@ function renderSeriesCard(s){
     </div>
 
     <div style="margin-bottom:10px;">
-      <label style="font-size:11.5px; font-weight:600; color:var(--ink-soft); display:block; margin-bottom:6px;">Размерные группы (вилки)</label>
+      <label style="font-size:11.5px; font-weight:600; color:var(--ink-soft); display:block; margin-bottom:6px;">Розмірні групи (вилки)</label>
       ${tierCols.map(t=>`
         <span class="tier-chip">
           <input data-tier-field="label" data-series-id="${s.id}" data-tier-id="${t.id}" value="${esc(t.label)}" style="width:130px;">
@@ -1651,11 +1658,11 @@ function renderSeriesCard(s){
     <div style="overflow-x:auto;">
     <table style="width:auto; min-width:100%;">
       <thead><tr>
-        <th style="min-width:360px;">${s.kind==='trim'?'Модель':'Отделка'}</th>
+        <th style="min-width:360px;">${s.kind==='trim'?'Модель':'Оздоблення'}</th>
         ${tierCols.map(t=>`<th colspan="3" style="white-space:normal; min-width:186px;">${esc(t.label)}</th>`).join('')}
         <th></th>
       </tr>
-      <tr><th></th>${tierCols.map(()=>`<th style="min-width:58px;">Цена</th><th style="min-width:58px;">Петли×</th><th style="min-width:64px;">Тип</th>`).join('')}<th></th></tr></thead>
+      <tr><th></th>${tierCols.map(()=>`<th style="min-width:58px;">Ціна</th><th style="min-width:58px;">Завіси×</th><th style="min-width:64px;">Тип</th>`).join('')}<th></th></tr></thead>
       <tbody>
         ${s.rows.map(r=>`
         <tr data-series-row="${s.id}" data-row-id="${r.id}">
@@ -1672,11 +1679,11 @@ function renderSeriesCard(s){
     </table>
     </div>
     <div class="toolbar" style="margin-top:10px;">
-      <button class="btn btn-ghost btn-sm" data-add-row="${s.id}">+ Строка</button>
-      <button class="btn btn-ghost btn-sm" data-export-series="${s.id}">Экспорт CSV</button>
+      <button class="btn btn-ghost btn-sm" data-add-row="${s.id}">+ Рядок</button>
+      <button class="btn btn-ghost btn-sm" data-export-series="${s.id}">Експорт CSV</button>
       <label class="btn btn-ghost btn-sm" style="margin:0;">Импорт CSV<input type="file" accept=".csv" data-import-series="${s.id}" style="display:none;"></label>
     </div>
-    <p class="hint">При импорте CSV порядок и количество вилок должны совпадать с текущими вилками серии.</p>
+    <p class="hint">При імпорті CSV порядок і кількість вилок мають збігатися з поточними вилками серії.</p>
   </div>`;
 }
 
@@ -1685,10 +1692,10 @@ function renderExtrasCatalog(key, title){
   return `
   <div class="catalog-block">
     <div class="toolbar"><h3>${title}</h3></div>
-    <div class="desc">Единица: фикс. сумма / % от базовой цены двери / за м² площади полотна / за единицу (кол-во вводится в калькуляторе).</div>
+    <div class="desc">Одиниця: фікс. сума / % від базової ціни дверей / за м² площі полотна / за одиницю (кількість вводиться в калькуляторі).</div>
     <div style="overflow-x:auto;">
     <table>
-      <thead><tr><th>Название</th><th>Значение</th><th>Единица</th><th></th></tr></thead>
+      <thead><tr><th>Назва</th><th>Значення</th><th>Одиниця</th><th></th></tr></thead>
       <tbody>
         ${list.map(e=>`
         <tr data-row="${key}" data-id="${e.id}">
@@ -1696,7 +1703,7 @@ function renderExtrasCatalog(key, title){
           <td><input type="number" data-f="price" value="${e.price}"></td>
           <td><select data-f="unit">
             <option value="fixed" ${e.unit==='fixed'?'selected':''}>${CUR} фикс.</option>
-            <option value="percent" ${e.unit==='percent'?'selected':''}>% от цены</option>
+            <option value="percent" ${e.unit==='percent'?'selected':''}>% від ціни</option>
             <option value="sqm" ${e.unit==='sqm'?'selected':''}>${CUR}/м²</option>
             <option value="perUnit" ${e.unit==='perUnit'?'selected':''}>${CUR}/ед. (кол-во)</option>
           </select></td>
@@ -1705,7 +1712,7 @@ function renderExtrasCatalog(key, title){
       </tbody>
     </table>
     </div>
-    <div class="toolbar" style="margin-top:10px;"><button class="btn btn-ghost btn-sm" data-add="${key}">+ Добавить опцию</button></div>
+    <div class="toolbar" style="margin-top:10px;"><button class="btn btn-ghost btn-sm" data-add="${key}">+ Додати опцію</button></div>
   </div>`;
 }
 
@@ -1713,22 +1720,22 @@ function renderCompany(){
   const c = getActiveCompany();
   return `
   <div class="card">
-    <div class="card-title">Реквизиты компании (для счетов)</div>
+    <div class="card-title">Реквізити компанії (для рахунків)</div>
     <div class="toolbar" style="margin-bottom:14px;">
       ${state.companies.map(co=>`
         <button class="btn ${co.id===state.activeCompanyId?'btn-primary':'btn-ghost'}" data-select-company="${co.id}">${esc(co.name)||'(без названия)'}${co.id===state.activeCompanyId?' ✓':''}</button>
       `).join('')}
       <button class="btn btn-ghost" id="btnNewCompany">+ Нові реквізити</button>
     </div>
-    <div class="field"><label>Название компании / ИП</label><input id="c_name" value="${esc(c.name)}"></div>
-    <div class="field"><label>Реквизиты (ЄДРПОУ/ІПН, банк, счёт — свободный текст)</label><textarea id="c_requisites" rows="3">${esc(c.requisites)}</textarea></div>
+    <div class="field"><label>Назва компанії / ФОП</label><input id="c_name" value="${esc(c.name)}"></div>
+    <div class="field"><label>Реквізити (ЄДРПОУ/ІПН, банк, рахунок — вільний текст)</label><textarea id="c_requisites" rows="3">${esc(c.requisites)}</textarea></div>
     <div class="row2">
       <div class="field"><label>Телефон</label><input id="c_phone" value="${esc(c.phone)}"></div>
-      <div class="field"><label>Адрес / цех</label><input id="c_address" value="${esc(c.address)}"></div>
+      <div class="field"><label>Адреса / цех</label><input id="c_address" value="${esc(c.address)}"></div>
     </div>
     <div class="toolbar">
-      <button class="btn btn-primary" id="btnSaveCompany">Сохранить</button>
-      ${state.companies.length>1 ? `<button class="btn btn-ghost" id="btnDeleteCompany">Удалить эти реквизиты</button>` : ''}
+      <button class="btn btn-primary" id="btnSaveCompany">Зберегти</button>
+      ${state.companies.length>1 ? `<button class="btn btn-ghost" id="btnDeleteCompany">Видалити ці реквізити</button>` : ''}
     </div>
   </div>`;
 }
@@ -1737,8 +1744,8 @@ function renderInvoicesList(){
   const list = [...state.invoices].sort((a,b)=>b.createdAt-a.createdAt);
   return `
   <div class="card">
-    <div class="card-title">Сохранённые счета (${list.length})</div>
-    ${list.length===0?`<div class="empty"><p>Счетов пока нет.</p><p>Соберите двери в «Текущем объекте» и нажмите «Сформировать счёт».</p></div>`:
+    <div class="card-title">Збережені рахунки (${list.length})</div>
+    ${list.length===0?`<div class="empty"><p>Рахунків поки немає.</p><p>Зберіть двері у «Поточному об'єкті» і натисніть «Сформувати рахунок».</p></div>`:
     list.map(inv=>`
       <div class="invoice-list-item" data-view-invoice="${inv.id}">
         <div><strong>№ ${esc(inv.number)}</strong> — ${esc(inv.client||'без клиента')}
@@ -1758,22 +1765,22 @@ function renderInvoiceView(id){
   const c = getActiveCompany();
   return `
   <div class="toolbar no-print">
-    <button class="btn btn-ghost" id="btnBackInvoices">← К списку счетов</button>
-    <button class="btn btn-primary" id="btnPrintInvoice">Печать / Сохранить PDF</button>
+    <button class="btn btn-ghost" id="btnBackInvoices">← До списку рахунків</button>
+    <button class="btn btn-primary" id="btnPrintInvoice">Друк / Зберегти PDF</button>
   </div>
   <div class="invoice-sheet">
     <div class="invoice-head">
-      <div><h2>Счёт на оплату</h2>
+      <div><h2>Рахунок на оплату</h2>
         <div class="company">${esc(c.name)}${c.requisites?'\n'+esc(c.requisites):''}${c.phone?'\n'+esc(c.phone):''}${c.address?'\n'+esc(c.address):''}</div>
       </div>
-      <div class="num-date"><div class="mono">№ ${esc(inv.number)}</div><div>от ${esc(inv.date)}</div></div>
+      <div class="num-date"><div class="mono">№ ${esc(inv.number)}</div><div>від ${esc(inv.date)}</div></div>
     </div>
     <div class="invoice-meta">
-      <div><span>Клиент</span>${esc(inv.client)||'—'}</div>
-      <div><span>Объект</span>${esc(inv.object)||'—'}</div>
+      <div><span>Клієнт</span>${esc(inv.client)||'—'}</div>
+      <div><span>Об'єкт</span>${esc(inv.object)||'—'}</div>
     </div>
     <table class="invoice-table">
-      <thead><tr><th>№</th><th>Тип / серия</th><th>Размер, мм</th><th>Детали</th><th>Кол-во</th><th>Цена</th><th>Сумма</th></tr></thead>
+      <thead><tr><th>№</th><th>Тип / серія</th><th>Розмір, мм</th><th>Деталі</th><th>Кіл-сть</th><th>Ціна</th><th>Сума</th></tr></thead>
       <tbody>
         ${inv.items.map((i,idx)=>`
         <tr>
@@ -1785,10 +1792,10 @@ function renderInvoiceView(id){
           <td class="num">${money(i.unit)}</td>
           <td class="num">${money(i.unit*i.qty)}</td>
         </tr>`).join('')}
-        <tr class="total-row"><td colspan="6">Итого к оплате</td><td class="num">${money(inv.total)} ${CUR}</td></tr>
+        <tr class="total-row"><td colspan="6">Разом до сплати</td><td class="num">${money(inv.total)} ${CUR}</td></tr>
       </tbody>
     </table>
-    <div class="invoice-footer">Счёт сформирован автоматически. Подпись / печать: ______________________</div>
+    <div class="invoice-footer">Рахунок сформовано автоматично. Підпис / печатка: ______________________</div>
   </div>`;
 }
 
@@ -1889,7 +1896,7 @@ function buildSpecFromInvoice(invoice){
       }
       entries.push(e);
       if(item.spec && item.spec.widthSurchargeAmount>0){
-        entries.push({id:uid(), type:'note', text:'Опція: надбавка за ширину понад '+item.spec.widthSurchargeBase+'мм +'+(Math.round(item.spec.widthSurchargePercent*100)/100)+'% ('+money(item.spec.widthSurchargeAmount)+' '+CUR+')'});
+        entries.push({id:uid(), type:'note', text:'Опція: надбавка за ширину понад '+widthSurchargeDisplayThreshold(item.spec.widthSurchargeBase, item.spec.widthSurchargeSteps)+'мм'});
       }
     }
   });
@@ -1967,7 +1974,7 @@ function buildTrimSpecFromInvoice(invoice){
         entries.push({id:uid(), type:'note', text:'Опція: добірна планка до '+sp.dobirnaPlankaThreshold+'мм +'+money(sp.dobirnaPlankaAmount)+' '+CUR});
       }
       if(sp.widthSurchargeAmount>0){
-        entries.push({id:uid(), type:'note', text:'Опція: надбавка за ширину понад '+sp.widthSurchargeBase+'мм +'+(Math.round(sp.widthSurchargePercent*100)/100)+'% ('+money(sp.widthSurchargeAmount)+' '+CUR+')'});
+        entries.push({id:uid(), type:'note', text:'Опція: надбавка за ширину понад '+widthSurchargeDisplayThreshold(sp.widthSurchargeBase, sp.widthSurchargeSteps)+'мм'});
       }
     }
   });
@@ -1994,22 +2001,22 @@ function renderSpecsList(){
     const invs = [...state.invoices].sort((a,b)=>b.createdAt-a.createdAt);
     return `
     <div class="card">
-      <div class="card-title">Выберите счёт для спецификации</div>
-      ${invs.length===0 ? `<div class="empty"><p>Пока нет ни одного счёта.</p></div>` : invs.map(inv=>`
+      <div class="card-title">Виберіть рахунок для специфікації</div>
+      ${invs.length===0 ? `<div class="empty"><p>Поки немає жодного рахунку.</p></div>` : invs.map(inv=>`
         <div class="invoice-list-item" data-pick-invoice="${inv.id}">
           <div><strong>№ ${esc(inv.number)}</strong> — ${esc(inv.client||'без клиента')}
             <div class="meta">${esc(inv.object||'')} · ${esc(inv.date)} · ${inv.items.length} дв.</div>
           </div>
           <span class="sum">${money(inv.total)} ${CUR}</span>
         </div>`).join('')}
-      <button class="btn btn-ghost" id="btnCancelPicker" style="margin-top:8px;">Отмена</button>
+      <button class="btn btn-ghost" id="btnCancelPicker" style="margin-top:8px;">Скасувати</button>
     </div>`;
   }
   return `
   <div class="card">
-    <div class="card-title">Спецификации (${list.length})</div>
-    <div class="toolbar"><button class="btn btn-primary" id="btnNewSpec">+ Сформировать спецификацию</button></div>
-    ${list.length===0?`<div class="empty"><p>Спецификаций пока нет.</p></div>`:
+    <div class="card-title">Специфікації (${list.length})</div>
+    <div class="toolbar"><button class="btn btn-primary" id="btnNewSpec">+ Сформувати специфікацію</button></div>
+    ${list.length===0?`<div class="empty"><p>Специфікацій поки немає.</p></div>`:
     list.map(sp=>`
       <div class="invoice-list-item" data-view-spec="${sp.id}">
         <div><strong>№ ${esc(sp.number)}</strong>
@@ -2505,23 +2512,23 @@ function renderSpecView(id){
 
   return `
   <div class="toolbar no-print">
-    <button class="btn btn-ghost" id="btnBackSpecs">← К списку спецификаций</button>
-    <button class="btn btn-primary" id="btnPrintSpec">Печать / Сохранить PDF</button>
-    <button class="btn btn-ghost" id="btnExportSpecXls">Сохранить в Excel</button>
+    <button class="btn btn-ghost" id="btnBackSpecs">← До списку специфікацій</button>
+    <button class="btn btn-primary" id="btnPrintSpec">Друк / Зберегти PDF</button>
+    <button class="btn btn-ghost" id="btnExportSpecXls">Зберегти в Excel</button>
     ${(sp.cuttingEntries || sp.aluCuttingEntries) ? (state.notePickerOpen ? `
     <span style="display:inline-flex; gap:4px; align-items:center;">
-      <span style="font-size:12px; color:var(--muted);">Куда добавить примечание?</span>
+      <span style="font-size:12px; color:var(--muted);">Куди додати примітку?</span>
       <button class="btn btn-ghost" id="btnAddNoteToSpec">В специфікацію</button>
       ${sp.cuttingEntries ? `<button class="btn btn-ghost" id="btnAddNoteToCutting">В розкрій</button>` : ''}
       ${sp.aluCuttingEntries ? `<button class="btn btn-ghost" id="btnAddNoteToAlu">В різання профілю</button>` : ''}
-      <button class="btn btn-ghost" id="btnCancelNotePicker">Отмена</button>
-    </span>` : `<button class="btn btn-ghost" id="btnAddSpecNote">+ Примечание</button>`)
-      : `<button class="btn btn-ghost" id="btnAddSpecNote">+ Примечание</button>`}
-    <button class="btn btn-ghost" id="btnAddSpecDoor">+ Пустая дверь</button>
+      <button class="btn btn-ghost" id="btnCancelNotePicker">Скасувати</button>
+    </span>` : `<button class="btn btn-ghost" id="btnAddSpecNote">+ Примітка</button>`)
+      : `<button class="btn btn-ghost" id="btnAddSpecNote">+ Примітка</button>`}
+    <button class="btn btn-ghost" id="btnAddSpecDoor">+ Порожні двері</button>
   </div>
 
   <div class="card no-print">
-    <div class="card-title">Параметры заказа</div>
+    <div class="card-title">Параметри замовлення</div>
     <div class="row2">
       <div class="field"><label>№ замовлення</label><input id="sp_number" value="${esc(sp.number)}"></div>
       <div class="field"><label>Дата</label><input id="sp_date" value="${esc(sp.date)}"></div>
@@ -2693,7 +2700,8 @@ function attachHandlers(){
         handleModel: f.handleModel, handleColor: colorValue(f.handleColor,f.handleColorCustom),
         widthSurchargeAmount: calc.widthSurchargeAmount||0,
         widthSurchargePercent: calc.extraWidthPercent||0,
-        widthSurchargeBase: (calc.series && calc.series.widthSurcharge) ? calc.series.widthSurcharge.baseWidth : 0
+        widthSurchargeBase: (calc.series && calc.series.widthSurcharge) ? calc.series.widthSurcharge.baseWidth : 0,
+        widthSurchargeSteps: calc.widthSurchargeSteps||0
       };
     } else if(kind==='trim'){
       item.spec = {
@@ -2710,6 +2718,7 @@ function attachHandlers(){
         widthSurchargeAmount: calc.widthSurchargeAmount||0,
         widthSurchargePercent: calc.extraWidthPercent||0,
         widthSurchargeBase: (calc.series && calc.series.widthSurcharge) ? calc.series.widthSurcharge.baseWidth : 0,
+        widthSurchargeSteps: calc.widthSurchargeSteps||0,
         lyshtvaSets: f.lyshtvaSets||'2',
         doorColorRal: f.doorColorRal||'',
         sealColor: colorValue(f.sealColor,f.sealColorCustom),
@@ -2741,7 +2750,7 @@ function attachHandlers(){
   });
   const btnClear = document.getElementById('btnClearObject');
   if(btnClear) btnClear.onclick = async ()=>{
-    if(!confirm('Очистить список дверей текущего объекта?')) return;
+    if(!confirm('Очистити список дверей поточного об\'єкта?')) return;
     state.currentObject.items = []; await storeSet(KEYS.currentObject, state.currentObject); render();
   };
   const btnInv = document.getElementById('btnMakeInvoice');
@@ -2779,7 +2788,7 @@ function attachHandlers(){
   document.querySelectorAll('[data-add]').forEach(b=> b.onclick = async ()=>{
     const cat = b.dataset.add;
     if(cat==='hingeRef'){
-      state.hingeRef.push({id:uid(), code:'X'+(state.hingeRef.length+1), name:'Новый тип петли', maxWeightPair:0});
+      state.hingeRef.push({id:uid(), code:'X'+(state.hingeRef.length+1), name:'Новий тип завіси', maxWeightPair:0});
       await storeSet(KEYS.hingeRef, state.hingeRef);
     } else {
       state[cat].push({id:uid(), name:'Новая опция', price:0, unit:'fixed'});
@@ -2855,7 +2864,7 @@ function attachHandlers(){
     await storeSet(KEYS.series, state.series); render();
   });
   document.querySelectorAll('[data-del-series]').forEach(b=> b.onclick = async ()=>{
-    if(!confirm('Удалить эту серию целиком?')) return;
+    if(!confirm('Видалити цю серію повністю?')) return;
     state.series = state.series.filter(s=>s.id!==b.dataset.delSeries);
     await storeSet(KEYS.series, state.series); render();
   });
@@ -2904,7 +2913,7 @@ function attachHandlers(){
   const btnPrint = document.getElementById('btnPrintInvoice'); if(btnPrint) btnPrint.onclick = ()=> window.print();
   document.querySelectorAll('[data-del-invoice]').forEach(b=> b.onclick = async (e)=>{
     e.stopPropagation();
-    if(!confirm('Удалить этот счёт?')) return;
+    if(!confirm('Видалити цей рахунок?')) return;
     state.invoices = state.invoices.filter(i=>i.id!==b.dataset.delInvoice);
     await storeSet(KEYS.invoices, state.invoices); render();
   });
@@ -2937,7 +2946,7 @@ function attachHandlers(){
   document.querySelectorAll('[data-view-spec]').forEach(el=> el.onclick = ()=>{ state.viewSpecId = el.dataset.viewSpec; render(); });
   document.querySelectorAll('[data-del-spec]').forEach(b=> b.onclick = async (e)=>{
     e.stopPropagation();
-    if(!confirm('Удалить эту спецификацию?')) return;
+    if(!confirm('Видалити цю специфікацію?')) return;
     state.specifications = state.specifications.filter(s=>s.id!==b.dataset.delSpec);
     await storeSet(KEYS.specs, state.specifications); render();
   });
@@ -3051,7 +3060,7 @@ function attachHandlers(){
   });
   document.querySelectorAll('[data-del-entry]').forEach(b=> b.onclick = async ()=>{
     const sp = state.specifications.find(s=>s.id===state.viewSpecId); if(!sp) return;
-    if(!confirm('Удалить эту строку из спецификации?')) return;
+    if(!confirm('Видалити цей рядок зі специфікації?')) return;
     const inHidden = sp.entries.some(x=>x.id===b.dataset.delEntry);
     if(inHidden) sp.entries = sp.entries.filter(x=>x.id!==b.dataset.delEntry);
     else sp.trimEntries = (sp.trimEntries||[]).filter(x=>x.id!==b.dataset.delEntry);
