@@ -247,7 +247,7 @@ const WOOD_SCHEMES = {"wood00": "iVBORw0KGgoAAAANSUhEUgAAAKAAAAH7CAAAAABumstxAAA
 ============================================================ */
 const KEYS = {
   series:'doors:seriesV2', hingeRef:'doors:hingeRef', hiddenExtras:'doors:hiddenExtrasV3', trimExtras:'doors:trimExtrasV1',
-  handles:'doors:handles', company:'doors:company', currentObject:'doors:currentObject', invoices:'doors:invoices', specs:'doors:specs'
+  handles:'doors:handles', company:'doors:company', companies:'doors:companiesV1', activeCompanyId:'doors:activeCompanyId', currentObject:'doors:currentObject', invoices:'doors:invoices', specs:'doors:specs'
 };
 
 // --- Firebase / Firestore: спільне хмарне сховище на всю команду ---
@@ -291,6 +291,7 @@ async function storeSet(key, value){
   }
 }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function getActiveCompany(){ return state.companies.find(c=>c.id===state.activeCompanyId) || state.companies[0] || {name:'',requisites:'',phone:'',address:''}; }
 function money(n){ return (Math.round((n||0)*100)/100).toLocaleString('ru-RU',{minimumFractionDigits:0,maximumFractionDigits:2}); }
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function colorField(prefix, key, label, options, val, custom){
@@ -577,6 +578,7 @@ const SEED_TRIM_EXTRAS = [
 let state = {
   series:[], hingeRef:[], hiddenExtras:[], trimExtras:[],
   company:{name:'', requisites:'', phone:'', address:''},
+  companies:[], activeCompanyId:'',
   boxSpec:{name:'Alum 55 x 43', matrix:'8665'},
   currentObject:{client:'', object:'', items:[]},
   invoices:[], specifications:[], tab:'calcHidden', viewInvoiceId:null, viewSpecId:null, specPicker:false,
@@ -624,7 +626,19 @@ async function loadAll(){
   }
   state.hiddenExtras= await storeGet(KEYS.hiddenExtras, null)?? SEED_HIDDEN_EXTRAS;
   state.trimExtras  = await storeGet(KEYS.trimExtras, null)  ?? SEED_TRIM_EXTRAS;
-  state.company     = await storeGet(KEYS.company, null)     ?? state.company;
+  const storedCompanies = await storeGet(KEYS.companies, null);
+  if(Array.isArray(storedCompanies) && storedCompanies.length>0){
+    state.companies = storedCompanies;
+  } else {
+    // Міграція зі старого одинарного формату реквізитів, якщо він є
+    const oldCompany = await storeGet(KEYS.company, null);
+    state.companies = [oldCompany && (oldCompany.name||oldCompany.requisites||oldCompany.phone||oldCompany.address)
+      ? {id:uid(), ...oldCompany}
+      : {id:uid(), name:'', requisites:'', phone:'', address:''}];
+    await storeSet(KEYS.companies, state.companies);
+  }
+  state.activeCompanyId = (await storeGet(KEYS.activeCompanyId, null)) || state.companies[0].id;
+  if(!state.companies.find(c=>c.id===state.activeCompanyId)) state.activeCompanyId = state.companies[0].id;
   state.boxSpec     = await storeGet('doors:boxSpec', null)  ?? state.boxSpec;
   state.currentObject = await storeGet(KEYS.currentObject, null) ?? state.currentObject;
   state.invoices    = await storeGet(KEYS.invoices, null)    ?? [];
@@ -1171,7 +1185,7 @@ function render(){
   const scrollY = window.scrollY;
 
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===state.tab));
-  document.getElementById('companyHeaderName').textContent = state.company.name || 'Двери — калькулятор';
+  document.getElementById('companyHeaderName').textContent = getActiveCompany().name || 'Двери — калькулятор';
   if(state.tab==='calcHidden') app.innerHTML = renderCalcGeneric('hidden');
   else if(state.tab==='calcTrim') app.innerHTML = renderCalcGeneric('trim');
   else if(state.tab==='object') app.innerHTML = renderObject();
@@ -1428,9 +1442,8 @@ function renderCalcGeneric(kind){
         <input type="text" inputmode="decimal" id="${prefix}_trimplank" value="${esc(f.trimPlankWidth)}" placeholder="рахується автоматично">
       </div>
     </div>
-    <div class="fhint" style="margin:-8px 0 12px;">Ширина планки за замовчуванням = глибина проёму − 63мм. Можна вписати своє значення вручну.</div>
-    <div class="field" style="max-width:220px;">
-      <label>Лиштва — кількість комплектів</label>
+    <div class="field" style="max-width:280px;">
+      <label style="white-space:nowrap;">Лиштва — кількість комплектів</label>
       <div class="seg">
         <button type="button" data-lyshtva="1" class="${f.lyshtvaSets!=='2'?'active':''}">1 комплект</button>
         <button type="button" data-lyshtva="2" class="${f.lyshtvaSets==='2'?'active':''}">2 комплекти</button>
@@ -1693,17 +1706,26 @@ function renderExtrasCatalog(key, title){
 }
 
 function renderCompany(){
-  const c = state.company;
+  const c = getActiveCompany();
   return `
   <div class="card">
     <div class="card-title">Реквизиты компании (для счетов)</div>
+    <div class="toolbar" style="margin-bottom:14px;">
+      ${state.companies.map(co=>`
+        <button class="btn ${co.id===state.activeCompanyId?'btn-primary':'btn-ghost'}" data-select-company="${co.id}">${esc(co.name)||'(без названия)'}${co.id===state.activeCompanyId?' ✓':''}</button>
+      `).join('')}
+      <button class="btn btn-ghost" id="btnNewCompany">+ Нові реквізити</button>
+    </div>
     <div class="field"><label>Название компании / ИП</label><input id="c_name" value="${esc(c.name)}"></div>
     <div class="field"><label>Реквизиты (ЄДРПОУ/ІПН, банк, счёт — свободный текст)</label><textarea id="c_requisites" rows="3">${esc(c.requisites)}</textarea></div>
     <div class="row2">
       <div class="field"><label>Телефон</label><input id="c_phone" value="${esc(c.phone)}"></div>
       <div class="field"><label>Адрес / цех</label><input id="c_address" value="${esc(c.address)}"></div>
     </div>
-    <button class="btn btn-primary" id="btnSaveCompany">Сохранить</button>
+    <div class="toolbar">
+      <button class="btn btn-primary" id="btnSaveCompany">Сохранить</button>
+      ${state.companies.length>1 ? `<button class="btn btn-ghost" id="btnDeleteCompany">Удалить эти реквизиты</button>` : ''}
+    </div>
   </div>`;
 }
 
@@ -1729,7 +1751,7 @@ function renderInvoicesList(){
 function renderInvoiceView(id){
   const inv = state.invoices.find(i=>i.id===id);
   if(!inv) return renderInvoicesList();
-  const c = state.company;
+  const c = getActiveCompany();
   return `
   <div class="toolbar no-print">
     <button class="btn btn-ghost" id="btnBackInvoices">← К списку счетов</button>
@@ -2819,11 +2841,37 @@ function attachHandlers(){
   // ---- COMPANY ----
   const btnSaveCo = document.getElementById('btnSaveCompany');
   if(btnSaveCo) btnSaveCo.onclick = async ()=>{
-    state.company = {
-      name: document.getElementById('c_name').value, requisites: document.getElementById('c_requisites').value,
-      phone: document.getElementById('c_phone').value, address: document.getElementById('c_address').value
-    };
-    await storeSet(KEYS.company, state.company); render();
+    const co = state.companies.find(x=>x.id===state.activeCompanyId);
+    if(co){
+      co.name = document.getElementById('c_name').value;
+      co.requisites = document.getElementById('c_requisites').value;
+      co.phone = document.getElementById('c_phone').value;
+      co.address = document.getElementById('c_address').value;
+    }
+    await storeSet(KEYS.companies, state.companies); render();
+  };
+  const btnNewCo = document.getElementById('btnNewCompany');
+  if(btnNewCo) btnNewCo.onclick = async ()=>{
+    const co = {id:uid(), name:'', requisites:'', phone:'', address:''};
+    state.companies = [...state.companies, co];
+    state.activeCompanyId = co.id;
+    await storeSet(KEYS.companies, state.companies);
+    await storeSet(KEYS.activeCompanyId, state.activeCompanyId);
+    render();
+  };
+  document.querySelectorAll('[data-select-company]').forEach(b=> b.onclick = async ()=>{
+    state.activeCompanyId = b.dataset.selectCompany;
+    await storeSet(KEYS.activeCompanyId, state.activeCompanyId);
+    render();
+  });
+  const btnDelCo = document.getElementById('btnDeleteCompany');
+  if(btnDelCo) btnDelCo.onclick = async ()=>{
+    if(state.companies.length<=1) return;
+    state.companies = state.companies.filter(x=>x.id!==state.activeCompanyId);
+    state.activeCompanyId = state.companies[0].id;
+    await storeSet(KEYS.companies, state.companies);
+    await storeSet(KEYS.activeCompanyId, state.activeCompanyId);
+    render();
   };
 
   // ---- INVOICES ----
