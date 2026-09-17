@@ -130,6 +130,8 @@
   .invoice-head h2{font-size:22px;}
   .invoice-head .company{white-space:pre-line; font-size:12.5px; color:var(--ink-soft); margin-top:6px; line-height:1.5;}
   .invoice-head .num-date{text-align:right; font-size:13px;}
+  .inv-number-input{border:none; background:transparent; padding:0; font:inherit; color:inherit; text-align:right; width:90px;}
+  .inv-number-input:focus{outline:1px solid var(--copper); background:#fff;}
   .invoice-head .num-date .mono{font-size:16px; font-weight:600;}
   .invoice-meta{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; font-size:13.5px;}
   .invoice-meta div span{display:block; font-size:11px; text-transform:uppercase; color:var(--ink-soft); letter-spacing:.05em; margin-bottom:2px;}
@@ -247,7 +249,8 @@ const WOOD_SCHEMES = {"wood00": "iVBORw0KGgoAAAANSUhEUgAAAKAAAAH7CAAAAABumstxAAA
 ============================================================ */
 const KEYS = {
   series:'doors:seriesV2', hingeRef:'doors:hingeRef', hiddenExtras:'doors:hiddenExtrasV3', trimExtras:'doors:trimExtrasV1',
-  handles:'doors:handles', company:'doors:company', companies:'doors:companiesV1', activeCompanyId:'doors:activeCompanyId', currentObject:'doors:currentObject', invoices:'doors:invoices', specs:'doors:specs'
+  handles:'doors:handles', company:'doors:company', companies:'doors:companiesV1', activeCompanyId:'doors:activeCompanyId', currentObject:'doors:currentObject', invoices:'doors:invoices', specs:'doors:specs',
+  finalClientMode:'doors:finalClientMode', finalClientPercent:'doors:finalClientPercent'
 };
 
 // --- Firebase / Firestore: спільне хмарне сховище на всю команду ---
@@ -301,6 +304,19 @@ function widthSurchargeDisplayThreshold(base, steps){
 }
 let _suppressDimBlur = false; // true під час перемальовування, яке ми самі запустили через oninput — щоб не плутати це зі справжньою втратою фокусу користувачем
 function getActiveCompany(){ return state.companies.find(c=>c.id===state.activeCompanyId) || state.companies[0] || {name:'',requisites:'',phone:'',address:''}; }
+function applyFinalClientMarkup(item){
+  // Перераховує item.unit/item.details з item.baseUnit/item.baseDetails під поточний стан
+  // перемикача "Конечник" — викликається і при додаванні нової двері, і при вмиканні/вимиканні
+  // самого перемикача для всіх уже доданих дверей одразу.
+  const pct = state.finalClientMode ? (parseFloat(state.finalClientPercent)||0) : 0;
+  if(pct>0){
+    item.unit = item.baseUnit*(1+pct/100);
+    item.details = item.baseDetails;
+  } else {
+    item.unit = item.baseUnit;
+    item.details = item.baseDetails;
+  }
+}
 function money(n){ return (Math.round((n||0)*100)/100).toLocaleString('ru-RU',{minimumFractionDigits:0,maximumFractionDigits:2}); }
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function colorField(prefix, key, label, options, val, custom){
@@ -588,6 +604,7 @@ let state = {
   series:[], hingeRef:[], hiddenExtras:[], trimExtras:[],
   company:{name:'', requisites:'', phone:'', address:''},
   companies:[], activeCompanyId:'',
+  finalClientMode:false, finalClientPercent:'20',
   boxSpec:{name:'Alum 55 x 43', matrix:'8665'},
   currentObject:{client:'', object:'', items:[]},
   invoices:[], specifications:[], tab:'calcHidden', viewInvoiceId:null, viewSpecId:null, specPicker:false,
@@ -650,6 +667,8 @@ async function loadAll(){
   if(!state.companies.find(c=>c.id===state.activeCompanyId)) state.activeCompanyId = state.companies[0].id;
   state.boxSpec     = await storeGet('doors:boxSpec', null)  ?? state.boxSpec;
   state.currentObject = await storeGet(KEYS.currentObject, null) ?? state.currentObject;
+  state.finalClientMode = await storeGet(KEYS.finalClientMode, null) ?? state.finalClientMode;
+  state.finalClientPercent = await storeGet(KEYS.finalClientPercent, null) ?? state.finalClientPercent;
   state.invoices    = await storeGet(KEYS.invoices, null)    ?? [];
   state.specifications = await storeGet(KEYS.specs, null)    ?? [];
 
@@ -1538,6 +1557,14 @@ function renderObject(){
       <div class="field"><label>Клієнт</label><input id="o_client" value="${esc(o.client)}" placeholder="ПІБ або компанія"></div>
       <div class="field"><label>Об'єкт / адреса</label><input id="o_object" value="${esc(o.object)}" placeholder="Адреса монтажу"></div>
     </div>
+    <div class="field" style="margin-top:4px;">
+      <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+        <input type="checkbox" id="o_finalClient" ${state.finalClientMode?'checked':''} style="width:16px; height:16px;">
+        Конечник
+      </label>
+      <div class="fhint" style="margin:2px 0 0;">Додає цю націнку (у %) до ціни всіх дверей в об'єкті — і вже доданих, і нових. Перерахунок відбувається одразу, при вмиканні/вимиканні або зміні відсотка.</div>
+      <input type="text" inputmode="decimal" id="o_finalClientPercent" value="${esc(state.finalClientPercent)}" placeholder="напр. 20" style="max-width:120px; margin-top:6px;" ${state.finalClientMode?'':'disabled'}>
+    </div>
   </div>
   <div class="card">
     <div class="card-title">Двері в цьому об'єкті (${items.length})</div>
@@ -1774,7 +1801,7 @@ function renderInvoiceView(id){
       <div><h2>Рахунок на оплату</h2>
         <div class="company">${esc(c.name)}${c.requisites?'\n'+esc(c.requisites):''}${c.phone?'\n'+esc(c.phone):''}${c.address?'\n'+esc(c.address):''}</div>
       </div>
-      <div class="num-date"><div class="mono">№ ${esc(inv.number)}</div><div>від ${esc(inv.date)}</div></div>
+      <div class="num-date"><div class="mono">№ <input id="inv_number" class="inv-number-input mono" value="${esc(inv.number)}"></div><div>від ${esc(inv.date)}</div></div>
     </div>
     <div class="invoice-meta">
       <div><span>Клієнт</span>${esc(inv.client)||'—'}</div>
@@ -2731,8 +2758,10 @@ function attachHandlers(){
     const f = kind==='trim' ? state.tf : state.hf;
     const calc = computeSeriesCalc(f, kind);
     if(!calc || calc.incomplete) return;
+    const baseDetails = buildDetails(calc, kind, f);
     const item = { uid:uid(), type:kind, mount:kind, title:calc.series.name,
-      w:calc.w, h:calc.h, qty:parseInt(f.qty)||1, unit:calc.unit, details:buildDetails(calc, kind, f) };
+      w:calc.w, h:calc.h, qty:parseInt(f.qty)||1, baseUnit:calc.unit, baseDetails:baseDetails, unit:calc.unit, details:baseDetails };
+    applyFinalClientMarkup(item);
     if(kind==='hidden'){
       item.spec = {
         profileName: calc.series.name,
@@ -2795,6 +2824,25 @@ function attachHandlers(){
   // ---- OBJECT ----
   const oc = document.getElementById('o_client'); if(oc) oc.oninput = async ()=>{ state.currentObject.client=oc.value; await storeSet(KEYS.currentObject, state.currentObject); };
   const oo = document.getElementById('o_object'); if(oo) oo.oninput = async ()=>{ state.currentObject.object=oo.value; await storeSet(KEYS.currentObject, state.currentObject); };
+  const ofc = document.getElementById('o_finalClient');
+  if(ofc) ofc.onchange = async ()=>{
+    state.finalClientMode = ofc.checked;
+    (state.currentObject.items||[]).forEach(applyFinalClientMarkup);
+    await storeSet(KEYS.finalClientMode, state.finalClientMode);
+    await storeSet(KEYS.currentObject, state.currentObject);
+    render();
+  };
+  const ofp = document.getElementById('o_finalClientPercent');
+  if(ofp){
+    ofp.oninput = ()=>{ state.finalClientPercent = ofp.value; };
+    ofp.onblur = async ()=>{
+      (state.currentObject.items||[]).forEach(applyFinalClientMarkup);
+      await storeSet(KEYS.finalClientPercent, state.finalClientPercent);
+      await storeSet(KEYS.currentObject, state.currentObject);
+      render();
+    };
+    ofp.onkeydown = (e)=>{ if(e.key==='Enter') ofp.blur(); };
+  }
   document.querySelectorAll('[data-remove-item]').forEach(b=> b.onclick = async ()=>{
     state.currentObject.items = state.currentObject.items.filter(i=>i.uid!==b.dataset.removeItem);
     await storeSet(KEYS.currentObject, state.currentObject); render();
@@ -2962,6 +3010,14 @@ function attachHandlers(){
   document.querySelectorAll('[data-view-invoice]').forEach(el=> el.onclick = ()=>{ state.viewInvoiceId=el.dataset.viewInvoice; render(); });
   const btnBack = document.getElementById('btnBackInvoices'); if(btnBack) btnBack.onclick = ()=>{ state.viewInvoiceId=null; render(); };
   const btnPrint = document.getElementById('btnPrintInvoice'); if(btnPrint) btnPrint.onclick = ()=> window.print();
+  const invNumberInput = document.getElementById('inv_number');
+  if(invNumberInput) invNumberInput.onblur = async ()=>{
+    const inv = state.invoices.find(i=>i.id===state.viewInvoiceId); if(!inv) return;
+    if(invNumberInput.value !== inv.number){
+      inv.number = invNumberInput.value;
+      await storeSet(KEYS.invoices, state.invoices);
+    }
+  };
   document.querySelectorAll('[data-del-invoice]').forEach(b=> b.onclick = async (e)=>{
     e.stopPropagation();
     if(!confirm('Видалити цей рахунок?')) return;
