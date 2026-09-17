@@ -308,6 +308,10 @@ function applyFinalClientMarkup(item){
   // Перераховує item.unit/item.details з item.baseUnit/item.baseDetails під поточний стан
   // перемикача "Конечник" — викликається і при додаванні нової двері, і при вмиканні/вимиканні
   // самого перемикача для всіх уже доданих дверей одразу.
+  // Старі двері (додані до появи цієї фічі) не мають baseUnit/baseDetails — one-time міграція:
+  // те, що в них зараз лежить у unit/details, і стає їхньою базою.
+  if(item.baseUnit==null) item.baseUnit = item.unit;
+  if(item.baseDetails==null) item.baseDetails = item.details||[];
   const pct = state.finalClientMode ? (parseFloat(state.finalClientPercent)||0) : 0;
   if(pct>0){
     item.unit = item.baseUnit*(1+pct/100);
@@ -667,6 +671,9 @@ async function loadAll(){
   if(!state.companies.find(c=>c.id===state.activeCompanyId)) state.activeCompanyId = state.companies[0].id;
   state.boxSpec     = await storeGet('doors:boxSpec', null)  ?? state.boxSpec;
   state.currentObject = await storeGet(KEYS.currentObject, null) ?? state.currentObject;
+  // Захист від зіпсованих/старих записів (без baseUnit/baseDetails або з details=undefined) —
+  // приводимо кожну позицію до робочого вигляду одразу при завантаженні.
+  (state.currentObject.items||[]).forEach(it=>{ if(it.details==null) it.details = []; if(it.baseDetails==null) it.baseDetails = it.details; if(it.baseUnit==null) it.baseUnit = it.unit; });
   state.finalClientMode = await storeGet(KEYS.finalClientMode, null) ?? state.finalClientMode;
   state.finalClientPercent = await storeGet(KEYS.finalClientPercent, null) ?? state.finalClientPercent;
   state.invoices    = await storeGet(KEYS.invoices, null)    ?? [];
@@ -1577,7 +1584,7 @@ function renderObject(){
         <tr>
           <td>${esc(i.title)}<br><span class="badge ${i.mount==='hidden'?'badge-hidden':'badge-trim'}">${i.mount==='hidden'?'прихований':'лиштва'}</span></td>
           <td class="mono">${i.w}×${i.h}</td>
-          <td class="details-cell">${i.details.map(esc).join('<br>')}</td>
+          <td class="details-cell">${(i.details||[]).map(esc).join('<br>')}</td>
           <td class="num">${i.qty}</td>
           <td class="num">${money(i.unit)}</td>
           <td class="num">${money(i.unit*i.qty)}</td>
@@ -1815,7 +1822,7 @@ function renderInvoiceView(id){
           <td class="mono">${idx+1}</td>
           <td>${esc(i.title)}</td>
           <td class="mono">${i.w}×${i.h}</td>
-          <td class="details-cell">${i.details.map(esc).join('<br>')}</td>
+          <td class="details-cell">${(i.details||[]).map(esc).join('<br>')}</td>
           <td class="num">${i.qty}</td>
           <td class="num">${money(i.unit)}</td>
           <td class="num">${money(i.unit*i.qty)}</td>
