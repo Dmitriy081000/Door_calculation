@@ -298,6 +298,13 @@ function widthSurchargeDisplayThreshold(base, steps){
   if(!steps || steps<=1) return base;
   return 900 + (steps-2)*100;
 }
+function specDisplayWidth(realW, base){
+  // У специфікації ширину в межах безкоштовного допуску (800–815мм, без надбавки) завжди показуємо
+  // як номінальні 800мм — реальний допуск не впливає на те, що пишеться в документ на виробництво.
+  const w = parseFloat(realW)||0;
+  if(base && w>800 && w<=base) return 800;
+  return w;
+}
 let _suppressDimBlur = false; // true під час перемальовування, яке ми самі запустили через oninput — щоб не плутати це зі справжньою втратою фокусу користувачем
 function getActiveCompany(){ return state.companies.find(c=>c.id===state.activeCompanyId) || state.companies[0] || {name:'',requisites:'',phone:'',address:''}; }
 function money(n){ return (Math.round((n||0)*100)/100).toLocaleString('ru-RU',{minimumFractionDigits:0,maximumFractionDigits:2}); }
@@ -1822,8 +1829,9 @@ function buildAluCuttingSpecFromInvoice(invoice){
       const e = blankAluCuttingDoorEntry();
       const sp = item.spec||{};
       e.name = (sp.profileName||item.title) + (sp.frameMatrix?' мат. '+sp.frameMatrix:'');
-      e.panelSize = item.h+'×'+item.w;
-      e.blockSize = (item.h+BLOCK_EXTRA_H)+'×'+(item.w+BLOCK_EXTRA_W);
+      const specW1 = specDisplayWidth(item.w, sp.widthSurchargeBase);
+      e.panelSize = item.h+'×'+specW1;
+      e.blockSize = (item.h+BLOCK_EXTRA_H)+'×'+(specW1+BLOCK_EXTRA_W);
       e.finish = (sp.faceFinish && sp.backFinish) ? (sp.faceFinish===sp.backFinish ? sp.faceFinish : sp.faceFinish+' / '+sp.backFinish) : (sp.finishLabel||'');
       e.profileColor = sp.profileColor||'';
       e.opening = sp.opening==='inside' ? ('Інсайд\n'+(sp.openingSide==='right'?'Праве':'Ліве')) : (sp.openingSide==='right'?'Праве':'Ліве');
@@ -1838,7 +1846,7 @@ function buildAluCuttingSpecFromInvoice(invoice){
       e.hingeColor = sp.hingeColor;
       // Розрахунок: стойова — від висоти полотна, поперечна — від ширини полотна, надбавка на
       // поперечну залежить від кольору профілю (чорний/сірий — трохи різні через товщину плівки).
-      const h = parseFloat(item.h)||0, w = parseFloat(item.w)||0;
+      const h = parseFloat(item.h)||0, w = specDisplayWidth(item.w, sp.widthSurchargeBase);
       const isGrey = /сір/i.test(e.profileColor||'');
       e.chetvVert = h ? (h-12.5) : '';
       e.chetvHor = w ? (w-(isGrey?24.3:23.9)) : '';
@@ -1875,8 +1883,9 @@ function buildSpecFromInvoice(invoice){
       if(item.spec){
         const sp = item.spec;
         e.name = sp.profileName + (sp.frameMatrix?' мат. '+sp.frameMatrix:'');
-        e.panelSize = item.h+'×'+item.w; // В х Ш order
-        e.blockSize = (item.h+BLOCK_EXTRA_H)+'×'+(item.w+BLOCK_EXTRA_W); // короб завжди більший за полотно на фіксовану величину
+        const specW2 = specDisplayWidth(item.w, sp.widthSurchargeBase);
+        e.panelSize = item.h+'×'+specW2; // В х Ш order
+        e.blockSize = (item.h+BLOCK_EXTRA_H)+'×'+(specW2+BLOCK_EXTRA_W); // короб завжди більший за полотно на фіксовану величину
         e.finish = (sp.faceFinish && sp.backFinish) ? (sp.faceFinish===sp.backFinish ? sp.faceFinish : sp.faceFinish+' / '+sp.backFinish) : (sp.finishLabel||'');
         e.profileColor = sp.profileColor;
         e.opening = sp.opening==='inside' ? ('Інсайд\n'+(sp.openingSide==='right'?'Праве':'Ліве')) : (sp.openingSide==='right'?'Праве':'Ліве');
@@ -1897,6 +1906,11 @@ function buildSpecFromInvoice(invoice){
       entries.push(e);
       if(item.spec && item.spec.widthSurchargeAmount>0){
         entries.push({id:uid(), type:'note', text:'Опція: надбавка за ширину понад '+widthSurchargeDisplayThreshold(item.spec.widthSurchargeBase, item.spec.widthSurchargeSteps)+'мм'});
+      }
+      if(item.spec && item.spec.selectedExtras){
+        item.spec.selectedExtras.forEach(ex=>{
+          entries.push({id:uid(), type:'note', text:'Опція: '+ex.name+(ex.qty?' × '+ex.qty:'')+' (+'+money(ex.amount)+' '+CUR+')'});
+        });
       }
     }
   });
@@ -1922,7 +1936,7 @@ function buildCuttingSpecFromInvoice(invoice){
       // надбавка під кожен конкретний виріб. Формула відрізняється для звичайного відкривання
       // і для інсайду. Глибина добірної планки — не формула, а те саме значення, що й у
       // звичайній специфікації (ширина добірної планки).
-      const h = parseFloat(item.h)||0, w = parseFloat(item.w)||0;
+      const h = parseFloat(item.h)||0, w = specDisplayWidth(item.w, sp.widthSurchargeBase);
       const isInside = sp.opening==='inside';
       e.lfVert = h ? (h+(isInside?81:93)) : '';
       e.lfHor = w ? (w+(isInside?-18:6)) : '';
@@ -1951,8 +1965,9 @@ function buildTrimSpecFromInvoice(invoice){
       const e = blankTrimDoorEntry();
       const sp = item.spec||{};
       e.name = (sp.trimModelLabel || item.title) + (sp.modelName ? '\n'+sp.modelName.replace(/^WOOD\s*/i,'')+(sp.frameMatrix?' мат. '+sp.frameMatrix:'') : '');
-      e.panelSize = item.h+'×'+item.w; // В х Ш order
-      e.blockSize = (item.h+TRIM_BLOCK_EXTRA_H)+'×'+(item.w+TRIM_BLOCK_EXTRA_W);
+      const specW3 = specDisplayWidth(item.w, sp.widthSurchargeBase);
+      e.panelSize = item.h+'×'+specW3; // В х Ш order
+      e.blockSize = (item.h+TRIM_BLOCK_EXTRA_H)+'×'+(specW3+TRIM_BLOCK_EXTRA_W);
       e.dobirnaPlanka = sp.trimPlankWidth || '';
       e.lyshtva = sp.lyshtvaSets || '2';
       e.finish = sp.doorColorRal || '';
@@ -1975,6 +1990,11 @@ function buildTrimSpecFromInvoice(invoice){
       }
       if(sp.widthSurchargeAmount>0){
         entries.push({id:uid(), type:'note', text:'Опція: надбавка за ширину понад '+widthSurchargeDisplayThreshold(sp.widthSurchargeBase, sp.widthSurchargeSteps)+'мм'});
+      }
+      if(sp.selectedExtras){
+        sp.selectedExtras.forEach(ex=>{
+          entries.push({id:uid(), type:'note', text:'Опція: '+ex.name+(ex.qty?' × '+ex.qty:'')+' (+'+money(ex.amount)+' '+CUR+')'});
+        });
       }
     }
   });
@@ -2701,7 +2721,8 @@ function attachHandlers(){
         widthSurchargeAmount: calc.widthSurchargeAmount||0,
         widthSurchargePercent: calc.extraWidthPercent||0,
         widthSurchargeBase: (calc.series && calc.series.widthSurcharge) ? calc.series.widthSurcharge.baseWidth : 0,
-        widthSurchargeSteps: calc.widthSurchargeSteps||0
+        widthSurchargeSteps: calc.widthSurchargeSteps||0,
+        selectedExtras: (calc.extras||[]).map(e=>({name:e.name, qty:e.qty||0, amount:e.computed||0}))
       };
     } else if(kind==='trim'){
       item.spec = {
@@ -2719,6 +2740,7 @@ function attachHandlers(){
         widthSurchargePercent: calc.extraWidthPercent||0,
         widthSurchargeBase: (calc.series && calc.series.widthSurcharge) ? calc.series.widthSurcharge.baseWidth : 0,
         widthSurchargeSteps: calc.widthSurchargeSteps||0,
+        selectedExtras: (calc.extras||[]).map(e=>({name:e.name, qty:e.qty||0, amount:e.computed||0})),
         lyshtvaSets: f.lyshtvaSets||'2',
         doorColorRal: f.doorColorRal||'',
         sealColor: colorValue(f.sealColor,f.sealColorCustom),
