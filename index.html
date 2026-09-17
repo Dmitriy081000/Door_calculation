@@ -1816,6 +1816,12 @@ function blankAluCuttingDoorEntry(){
 }
 function buildAluCuttingSpecFromInvoice(invoice){
   const entries = [];
+  let doorNum = 0;
+  const noteGroups = {}; // текст опції (без ціни) → список номерів дверей, що її використовують
+  const addOptionNote = (text)=>{
+    if(!noteGroups[text]) noteGroups[text] = [];
+    noteGroups[text].push(doorNum);
+  };
   invoice.items.forEach(item=>{
     if(item.type!=='hidden') return; // ця специфікація стосується лише різальника алюмінієвого профілю скритого монтажу
     const qty = item.qty||1;
@@ -1844,7 +1850,19 @@ function buildAluCuttingSpecFromInvoice(invoice){
       e.chetvVert = h ? (h-12.5) : '';
       e.chetvHor = w ? (w-(isGrey?24.3:23.9)) : '';
       entries.push(e);
+      doorNum++;
+      if(sp.widthSurchargeAmount>0){
+        addOptionNote('надбавка за ширину понад '+widthSurchargeDisplayThreshold(sp.widthSurchargeBase, sp.widthSurchargeSteps)+'мм');
+      }
+      if(sp.selectedExtras){
+        sp.selectedExtras.forEach(ex=>{
+          addOptionNote(ex.name+(ex.qty?' × '+ex.qty:''));
+        });
+      }
     }
+  });
+  Object.keys(noteGroups).forEach(text=>{
+    entries.push({id:uid(), type:'note', text:'Позиція: '+noteGroups[text].join(',')+' - Опція: '+text});
   });
   entries.push({id:uid(), type:'note', text:'Шильда WD'});
   return entries;
@@ -1868,6 +1886,12 @@ function computeDefaultFinishSides(row, doorColor){
 }
 function buildSpecFromInvoice(invoice){
   const entries = [];
+  let doorNum = 0;
+  const noteGroups = {}; // текст опції (без ціни) → список номерів дверей, що її використовують
+  const addOptionNote = (text)=>{
+    if(!noteGroups[text]) noteGroups[text] = [];
+    noteGroups[text].push(doorNum);
+  };
   invoice.items.forEach(item=>{
     if(item.type!=='hidden') return; // trim doors are handled by buildTrimSpecFromInvoice, in their own table
     const qty = item.qty||1;
@@ -1896,15 +1920,19 @@ function buildSpecFromInvoice(invoice){
         e.finish = (item.details&&item.details[0]) || '';
       }
       entries.push(e);
+      doorNum++;
       if(item.spec && item.spec.widthSurchargeAmount>0){
-        entries.push({id:uid(), type:'note', text:'Опція: надбавка за ширину понад '+widthSurchargeDisplayThreshold(item.spec.widthSurchargeBase, item.spec.widthSurchargeSteps)+'мм'});
+        addOptionNote('надбавка за ширину понад '+widthSurchargeDisplayThreshold(item.spec.widthSurchargeBase, item.spec.widthSurchargeSteps)+'мм');
       }
       if(item.spec && item.spec.selectedExtras){
         item.spec.selectedExtras.forEach(ex=>{
-          entries.push({id:uid(), type:'note', text:'Опція: '+ex.name+(ex.qty?' × '+ex.qty:'')+' (+'+money(ex.amount)+' '+CUR+')'});
+          addOptionNote(ex.name+(ex.qty?' × '+ex.qty:''));
         });
       }
     }
+  });
+  Object.keys(noteGroups).forEach(text=>{
+    entries.push({id:uid(), type:'note', text:'Позиція: '+noteGroups[text].join(',')+' - Опція: '+text});
   });
   entries.push({id:uid(), type:'note', text:'Шильда WD'});
   return entries;
@@ -1950,6 +1978,12 @@ function blankTrimDoorEntry(){
 }
 function buildTrimSpecFromInvoice(invoice){
   const entries = [];
+  let doorNum = 0;
+  const noteGroups = {}; // текст опції (без ціни) → список номерів дверей, що її використовують
+  const addOptionNote = (text)=>{
+    if(!noteGroups[text]) noteGroups[text] = [];
+    noteGroups[text].push(doorNum);
+  };
   invoice.items.forEach(item=>{
     if(item.type!=='trim') return; // this document type covers trim (з наличником) doors only
     const qty = item.qty||1;
@@ -1976,18 +2010,22 @@ function buildTrimSpecFromInvoice(invoice){
       e.hingeColor = sp.hingeColor || '';
       e.profileColor = sp.profileColor || '';
       entries.push(e);
+      doorNum++;
       if(sp.dobirnaPlankaAmount>0){
-        entries.push({id:uid(), type:'note', text:'Опція: добірна планка до '+sp.dobirnaPlankaThreshold+'мм +'+money(sp.dobirnaPlankaAmount)+' '+CUR});
+        addOptionNote('добірна планка до '+sp.dobirnaPlankaThreshold+'мм');
       }
       if(sp.widthSurchargeAmount>0){
-        entries.push({id:uid(), type:'note', text:'Опція: надбавка за ширину понад '+widthSurchargeDisplayThreshold(sp.widthSurchargeBase, sp.widthSurchargeSteps)+'мм'});
+        addOptionNote('надбавка за ширину понад '+widthSurchargeDisplayThreshold(sp.widthSurchargeBase, sp.widthSurchargeSteps)+'мм');
       }
       if(sp.selectedExtras){
         sp.selectedExtras.forEach(ex=>{
-          entries.push({id:uid(), type:'note', text:'Опція: '+ex.name+(ex.qty?' × '+ex.qty:'')+' (+'+money(ex.amount)+' '+CUR+')'});
+          addOptionNote(ex.name+(ex.qty?' × '+ex.qty:''));
         });
       }
     }
+  });
+  Object.keys(noteGroups).forEach(text=>{
+    entries.push({id:uid(), type:'note', text:'Позиція: '+noteGroups[text].join(',')+' - Опція: '+text});
   });
   entries.push({id:uid(), type:'note', text:'Шильда WD'});
   return entries;
@@ -2122,7 +2160,7 @@ function renderSpecPageTable(sp, pageNum, pageEntries, skipDiagram){
           </div>`;
         return `<div data-spec-row="${e.id}" style="border:1px solid #000; padding:6px 8px; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
           <span class="mono">${e._num||''}</span>
-          <div style="flex:1;">${ta('text',e.id,e.text||'','font-weight:600; font-size:15px; width:100%;')}</div>
+          <div style="flex:1;">${ta('text',e.id,e.text||'','font-weight:600; font-size:12px; width:100%;')}</div>
           ${moveBtns}
         </div>`;
       }).join('');
@@ -2320,7 +2358,7 @@ function renderTrimSpecPageTable(sp, pageNum, pageEntries, skipDiagram){
           </div>`;
         return `<div data-spec-row="${e.id}" style="border:1px solid #000; padding:6px 8px; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
           <span class="mono">${e._num||''}</span>
-          <div style="flex:1;">${ta('text',e.id,e.text||'','font-weight:600; font-size:15px; width:100%;')}</div>
+          <div style="flex:1;">${ta('text',e.id,e.text||'','font-weight:600; font-size:12px; width:100%;')}</div>
           ${moveBtns}
         </div>`;
       }).join('');
@@ -2421,7 +2459,7 @@ function renderCuttingSpecPageTable(sp, pageNum, pageEntries){
           </div>`;
         return `<div data-spec-row="${e.id}" style="border:1px solid #000; padding:6px 8px; margin-top:10px; display:flex; align-items:center; gap:8px; max-width:50%;">
           <span class="mono">${e._num||''}</span>
-          <div style="flex:1;">${ta('text',e.id,e.text||'','font-weight:600; font-size:15px; width:100%;')}</div>
+          <div style="flex:1;">${ta('text',e.id,e.text||'','font-weight:600; font-size:12px; width:100%;')}</div>
           ${moveBtns}
         </div>`;
       }).join('');
