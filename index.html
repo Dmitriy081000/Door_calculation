@@ -180,6 +180,19 @@
   .spec-col-scolor{width:5%;} .spec-col-hcolor{width:5%;} .spec-col-num{width:1.5%;}
   .spec-col-dobirnaplanka{width:5.5%;} .spec-col-lyshtva{width:4%;} .spec-col-decor{width:9%;}
 
+  /* ===== Picker checklist ("Специфікація для комплектовщика") ===== */
+  /* Один невеликий бланк на аркуші — розмір навмисно компактний (як картка), а не на весь лист. */
+  .picker-card{border:1px solid #000; padding:8px 10px; display:inline-flex; flex-direction:column; width:230px;}
+  .picker-card .picker-top{display:flex; align-items:center; gap:6px; border-bottom:1.3px solid #000; padding-bottom:4px; margin-bottom:4px;}
+  .picker-card .picker-num-label{font-size:15px; font-weight:800; line-height:1;}
+  .picker-card .picker-num-value{flex:1; font-size:11px; font-weight:800; border:1px solid #000; padding:2px 4px; text-align:center;}
+  .picker-card .picker-title{font-size:8.5px; font-weight:700; text-transform:uppercase; text-align:center; margin-bottom:4px; letter-spacing:.02em;}
+  .picker-card .picker-table{width:100%; border-collapse:collapse; font-size:8.5px;}
+  .picker-card .picker-table td{border:1px solid #000; padding:4px 5px; color:#000; line-height:1.2;}
+  .picker-card .picker-table td.picker-label{font-weight:400;}
+  .picker-card .picker-table td.picker-qty{width:20px; text-align:center; font-weight:700; font-family:'IBM Plex Mono',monospace;}
+  .picker-note{font-size:10px; color:#666; font-weight:400; margin-top:8px; line-height:1.5;}
+
   @media print{
     .topbar,.tabs,.no-print{display:none !important;}
     body{background:#fff;}
@@ -958,18 +971,37 @@ const WOOD_SCHEME_RECIPES = {
   },
   wood21_22: {
     handleY:1250,
-    dims: [{key:'topGap', label:'Відступ до великого вікна згори, мм', def:300}, {key:'frameThick', label:'Товщина рамки, мм', def:110}, {key:'midGap', label:'Проміжок між вікнами, мм', def:150}, {key:'smallH', label:'Висота малого вікна, мм', def:300}],
+    dims: [{key:'frameThick', label:'Відступ від країв (з усіх боків), мм', def:110}, {key:'step2', label:'2-га ступінь фрезерування, мм', def:40}, {key:'step3', label:'3-тя ступінь фрезерування, мм', def:25}, {key:'midGap', label:'Проміжок між вікнами, мм', def:150}, {key:'smallH', label:'Висота малого вікна, мм', def:300}],
     draw(d,W,H){
-      const bigX=d.frameThick*0.6, bigY=d.topGap, bigW=W-2*bigX, bigH=H-d.topGap-d.midGap-d.smallH-d.frameThick*0.6;
-      const smY=H-d.smallH-d.frameThick*0.6, smX=bigX, smW=bigW;
+      // Відступ 110мм однаковий з усіх чотирьох боків для ОБОХ вікон — і зверху/зліва/справа у великого,
+      // і знизу/зліва/справа у малого. Між вікнами — окремий проміжок (midGap).
+      const inset = d.frameThick;
+      const in2 = d.step2, in3 = d.step2+d.step3; // кумулятивні відступи 2-ї та 3-ї ступені всередину від першої
+      const bigX=inset, bigY=inset, bigW=W-2*inset;
+      const smY=H-inset-d.smallH, smX=inset, smW=W-2*inset;
+      const bigH = smY - d.midGap - bigY;
       return [
-        {t:'rect',x:bigX,y:bigY,w:bigW,h:bigH,frame:true,thick:d.frameThick,glass:true},
-        {t:'rect',x:smX,y:smY,w:smW,h:d.smallH,frame:true,thick:d.frameThick*0.8,glass:true}
+        {t:'rect',x:bigX,y:bigY,w:bigW,h:bigH},
+        {t:'rect',x:bigX+in2,y:bigY+in2,w:bigW-2*in2,h:bigH-2*in2},
+        {t:'rect',x:bigX+in3,y:bigY+in3,w:bigW-2*in3,h:bigH-2*in3,glass:true},
+        {t:'rect',x:smX,y:smY,w:smW,h:d.smallH},
+        {t:'rect',x:smX+in2,y:smY+in2,w:smW-2*in2,h:d.smallH-2*in2},
+        {t:'rect',x:smX+in3,y:smY+in3,w:smW-2*in3,h:d.smallH-2*in3,glass:true}
       ];
     },
     annotate(d,W,H){
-      const smY=H-d.smallH-d.frameThick*0.6;
-      return [vLead(W*0.85,0,d.topGap-15,d.topGap,1), vLead(W*0.85,d.topGap,smY-15,d.midGap,1), vLead(W*0.85,smY,H-15,d.smallH,1), label(W*0.15,d.topGap+90,d.frameThick,26)];
+      const inset = d.frameThick;
+      const smY=H-inset-d.smallH;
+      const bigH = smY - d.midGap - inset;
+      return [
+        vLead(W*0.85,0,inset-15,inset,1),
+        vLead(W*0.85,inset,inset+bigH-15,bigH,1),
+        vLead(W*0.85,inset+bigH,smY-15,d.midGap,1),
+        vLead(W*0.85,smY,H-15,d.smallH,1),
+        label(W*0.15,inset+90,d.frameThick,26),
+        label(W*0.15,inset+130,d.step2,26),
+        label(W*0.15,inset+170,d.step3,26)
+      ];
     }
   },
   wood30: {
@@ -2510,6 +2542,136 @@ function buildNumberedPages(entries){
   withPages.forEach(e=>{ (pages[e._page]=pages[e._page]||[]).push(e); });
   return Object.keys(pages).map(Number).sort((a,b)=>a-b).map(pn=>pages[pn]);
 }
+
+/* ============================================================
+   PICKER CHECKLIST — "Специфікація для комплектовщика": один лист на
+   весь заказ (специфікацію) цілком, з кількостями фурнітури, зведеними
+   по всіх дверях замовлення (і скритий монтаж, і з лиштвою разом).
+   Джерело даних — оригінальний рахунок (invoice), на якому побудована
+   специфікація (sp.invoiceId): саме там зберігаються "сирі" item.spec
+   (hingeQty, обраний каркас/серія, selectedExtras) для кожної позиції.
+   Кількість ручок — виняток: береться з уже сформованих рядків
+   специфікації (sp.entries/trimEntries), бо там поле "Ручка" редаговане
+   вручну по кожній двері (Так/Ні) і повинно відображати останні правки.
+============================================================ */
+const SCREW_SIZE_LABEL = {alum25:'Шурупи 4,2 × 25', alum45:'Шурупи 4,2 × 45', wood70:'Шурупи 4,0 × 70'};
+function classifyFrameScrewType(seriesName, frameMatrix){
+  // 40мм алюм. та 55мм Лайт алюм. → 4,2×25; 55мм Стандарт алюм. → 4,2×45; дерев'яний каркас → 4,0×70.
+  // Пріоритет — код матриці профілю (frameMatrix), якщо він заповнений на вкладці "Прайс-лист";
+  // інакше — розпізнавання за назвою серії (завжди присутня).
+  const name = (seriesName||'').toLowerCase();
+  if(frameMatrix==='222122') return 'alum45';
+  if(frameMatrix==='8675' || frameMatrix==='8670') return 'alum25';
+  if(/дерев|^wood/.test(name)) return 'wood70';
+  if(/55.*standart/.test(name)) return 'alum45';
+  if(/40мм|^alum\s*40$|55.*light|^alum\s*55\s*light$/.test(name)) return 'alum25';
+  return null; // нова/незнайома серія — жодного типорозміру не додаємо автоматично, щоб не рахувати навмання
+}
+function computePickerSummary(sp){
+  const invoice = state.invoices.find(i=>i.id===sp.invoiceId);
+  const items = invoice ? invoice.items : [];
+  let hingesTotal=0, cornersTotal=0, stopperTotal=0, platesTotal=0, doorsTotal=0, sealManualDoors=0;
+  const screwBuckets = {};
+  const sealBuckets = {};  // колір ущільнювача → метри
+  const hingeBuckets = {}; // "назва|колір" завіс → {name,color,qty}
+  const lockBuckets = {};  // колір замку → кількість дверей (1 компл. замок+планка на двері)
+  items.forEach(item=>{
+    const qty = item.qty||1;
+    doorsTotal += qty;
+    const h = parseFloat(item.h)||0;
+    const s = item.spec||{};
+    const hq = parseFloat(s.hingeQty)||0;
+    const doorHinges = hq*qty;
+    hingesTotal += doorHinges;
+    // Ущільнювач: до 2000мм — 5м, від 2001 до 2700мм — 6м (на кожну двері), з розбивкою по кольору.
+    // Вище 2700мм — рахують вручну, тому поле лишаємо порожнім.
+    const sealColor = s.sealColor || '—';
+    if(h>2700){
+      sealManualDoors += qty;
+    } else {
+      const sealPerDoor = h<=2000 ? 5 : 6;
+      sealBuckets[sealColor] = (sealBuckets[sealColor]||0) + sealPerDoor*qty;
+    }
+    // Завіси — з розбивкою по назві (К1000 / Анселмі тощо) та кольору.
+    if(doorHinges>0){
+      const hName = hingeNameShort(s.hingeCode||'');
+      const hColor = s.hingeColor || '—';
+      const key = hName+'|'+hColor;
+      if(!hingeBuckets[key]) hingeBuckets[key] = {name:hName, color:hColor, qty:0};
+      hingeBuckets[key].qty += doorHinges;
+    }
+    // Замок, відповідна планка — 1 компл. на кожну двері, з розбивкою по кольору замку.
+    const lockColor = s.lockColor || '—';
+    lockBuckets[lockColor] = (lockBuckets[lockColor]||0) + qty;
+    // Монтажні пластини — лише двері скритого монтажу (для дверей з наличником не кладемо).
+    if(item.type==='hidden'){
+      const platesPerDoor = h<=2100 ? 10 : 10+Math.ceil((h-2100)/100);
+      platesTotal += platesPerDoor*qty;
+    }
+    // Шурупи під завіси (по 2 на завісу) — розбиваємо по типорозміру каркаса.
+    const seriesName = item.type==='trim' ? (s.modelName||item.title||'') : (s.profileName||item.title||'');
+    const screwType = classifyFrameScrewType(seriesName, s.frameMatrix||'');
+    if(screwType && doorHinges>0) screwBuckets[screwType] = (screwBuckets[screwType]||0) + doorHinges*2;
+    // Монтажні кутки — лише двері скритого монтажу, і лише якщо короб НЕ замовлено "в зборі".
+    if(item.type==='hidden'){
+      const boxAssembled = (s.selectedExtras||[]).some(e=>/короб.*(з розпірками|в\s*збор)/i.test(e.name||''));
+      if(!boxAssembled) cornersTotal += 4*qty;
+    }
+    // Стопор — рахуємо по кожній двері (скритий монтаж або з лиштвою), де обрано відповідну опцію.
+    if((s.selectedExtras||[]).some(e=>/стопор/i.test(e.name||''))) stopperTotal += qty;
+  });
+  const dowelsTotal = cornersTotal*2; // 2 гужони на 1 кутик
+  const hingeCapsTotal = hingesTotal*2; // 2 заглушки на 1 завісу
+  // Шурупи 4,2×16: 2 на кожну завісу + 2 на кожну двері під відповідну планку замка.
+  const screwCapsTotal = hingesTotal*2 + doorsTotal*2;
+  const screwRows = Object.keys(screwBuckets).filter(k=>screwBuckets[k]>0).map(k=>({label:SCREW_SIZE_LABEL[k], qty:screwBuckets[k]}));
+  const sealRows = Object.keys(sealBuckets).sort().map(color=>({label:'Ущільнювач ('+color+'), м', qty:sealBuckets[color]}));
+  if(sealManualDoors>0) sealRows.push({label:'Ущільнювач, двері >2700мм ('+sealManualDoors+' шт) — вручну, м', qty:''});
+  const hingeRows = Object.values(hingeBuckets).sort((a,b)=>(a.name+a.color).localeCompare(b.name+b.color))
+    .map(b=>({label:'Завіси '+b.name+' ('+b.color+'), шт', qty:b.qty}));
+  const lockRows = Object.keys(lockBuckets).sort().map(color=>({label:'Замок, відповідна планка ('+color+'), компл.', qty:lockBuckets[color]}));
+  const allDoorEntries = [...(sp.entries||[]), ...(sp.trimEntries||[])].filter(e=>e.type==='door');
+  // Ручки: 1 комплект на кожну двері за замовчуванням ("Так"); якщо в специфікації вручну
+  // проставлено "Ні" — та двері не враховується. Якщо рядків специфікації ще немає — рахуємо всі двері рахунку.
+  const handlesTotal = allDoorEntries.length ? allDoorEntries.filter(e=>e.handle!=='Ні').length : doorsTotal;
+  return {invoiceFound:!!invoice, sealRows, hingeRows, hingesTotal, hingeCapsTotal, screwCapsTotal, screwRows,
+          platesTotal, lockRows, cornersTotal, dowelsTotal, stopperTotal, handlesTotal};
+}
+function renderPickerCard(sp, p){
+  const row = (label, qty)=>`<tr><td class="picker-label">${esc(label)}</td><td class="picker-qty">${qty || (qty===0?0:'')}</td></tr>`;
+  const rows = [
+    ...p.sealRows.map(r=>row(r.label, r.qty)),
+    ...p.hingeRows.map(r=>row(r.label, r.qty)),
+    row('Заглушки на завіси, шт', p.hingeCapsTotal),
+    row('Шурупи 4,2 × 16, шт', p.screwCapsTotal),
+    ...p.screwRows.map(r=>row(r.label+', шт', r.qty)),
+    row('Монтажні пластини, шт', p.platesTotal),
+    ...p.lockRows.map(r=>row(r.label, r.qty)),
+    row('Монтажні кутки, шт', p.cornersTotal),
+    row('Гужони, шт', p.dowelsTotal),
+    row('Стопор, шт', p.stopperTotal),
+    row('Ручки, шт', p.handlesTotal),
+  ].join('');
+  return `
+  <div class="picker-card">
+    <div class="picker-top">
+      <div class="picker-num-label">№</div>
+      <div class="picker-num-value mono">${esc(sp.number)}</div>
+    </div>
+    <div class="picker-title">Специфікація для комплектовщика</div>
+    <table class="picker-table"><tbody>${rows}</tbody></table>
+  </div>`;
+}
+function renderPickerSheet(sp){
+  const p = computePickerSummary(sp);
+  // Один невеликий бланк на аркуші — розмір компактний, але лист один, без розмноження.
+  return `
+  <div class="spec-sheet">
+    ${renderPickerCard(sp, p)}
+    ${!p.invoiceFound ? `<div class="picker-note">Не вдалося знайти вихідний рахунок цієї специфікації — кількості, крім «Ручки», порахувати не вдалося.</div>` : ''}
+  </div>`;
+}
+
 function renderSpecView(id){
   const sp = state.specifications.find(x=>x.id===id);
   if(!sp) return renderSpecsList();
@@ -2626,6 +2788,7 @@ function renderSpecView(id){
     ${sheetsHtml}
     ${cuttingSheetsHtml}
     ${aluSheetsHtml}
+    ${renderPickerSheet(sp)}
   </div>`;
 }
 
