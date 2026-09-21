@@ -182,16 +182,16 @@
 
   /* ===== Picker checklist ("Специфікація для комплектовщика") ===== */
   /* Один невеликий бланк на аркуші — розмір навмисно компактний (як картка), а не на весь лист. */
-  .picker-card{border:1px solid #000; padding:8px 10px; display:inline-flex; flex-direction:column; width:230px;}
-  .picker-card .picker-top{display:flex; align-items:center; gap:6px; border-bottom:1.3px solid #000; padding-bottom:4px; margin-bottom:4px;}
-  .picker-card .picker-num-label{font-size:15px; font-weight:800; line-height:1;}
-  .picker-card .picker-num-value{flex:1; font-size:11px; font-weight:800; border:1px solid #000; padding:2px 4px; text-align:center;}
-  .picker-card .picker-title{font-size:8.5px; font-weight:700; text-transform:uppercase; text-align:center; margin-bottom:4px; letter-spacing:.02em;}
-  .picker-card .picker-table{width:100%; border-collapse:collapse; font-size:8.5px;}
-  .picker-card .picker-table td{border:1px solid #000; padding:4px 5px; color:#000; line-height:1.2;}
+  .picker-card{border:1px solid #000; padding:11px 14px; display:inline-flex; flex-direction:column; width:322px;}
+  .picker-card .picker-top{display:flex; align-items:center; gap:8px; border-bottom:1.8px solid #000; padding-bottom:6px; margin-bottom:6px;}
+  .picker-card .picker-num-label{font-size:21px; font-weight:800; line-height:1;}
+  .picker-card .picker-num-value{flex:1; font-size:15px; font-weight:800; border:1px solid #000; padding:3px 6px; text-align:center;}
+  .picker-card .picker-title{font-size:12px; font-weight:700; text-transform:uppercase; text-align:center; margin-bottom:6px; letter-spacing:.02em;}
+  .picker-card .picker-table{width:100%; border-collapse:collapse; font-size:12px;}
+  .picker-card .picker-table td{border:1px solid #000; padding:6px 7px; color:#000; line-height:1.2;}
   .picker-card .picker-table td.picker-label{font-weight:400;}
-  .picker-card .picker-table td.picker-qty{width:20px; text-align:center; font-weight:700; font-family:'IBM Plex Mono',monospace;}
-  .picker-note{font-size:10px; color:#666; font-weight:400; margin-top:8px; line-height:1.5;}
+  .picker-card .picker-table td.picker-qty{width:28px; text-align:center; font-weight:700; font-family:'IBM Plex Mono',monospace;}
+  .picker-note{font-size:14px; color:#666; font-weight:400; margin-top:11px; line-height:1.5;}
 
   @media print{
     .topbar,.tabs,.no-print{display:none !important;}
@@ -539,7 +539,7 @@ function buildSeed(){
     widthSurcharge:{enabled:true, baseWidth:815, step:100, percent:15, maxWidth:1100}, allowNormalOpening:true, allowInsideOpening:false,
     insideOpeningAddon:0, insideOpeningNote:'40мм — тільки звичайне відкривання (на себе).',
     tiers:[{id:y1,label:'до 800×2050мм',maxWidth:800,maxHeight:2050},{id:y2,label:'до 800×2300мм',maxWidth:800,maxHeight:2300},{id:y3,label:'до 800×2500мм',maxWidth:800,maxHeight:2500}],
-    rows: buildWoodRows(y1,y2,y3,[2,3,4],'HF')
+    rows: buildWoodRows(y1,y2,y3,[2,3,4],'K')
   });
   const z1=uid(), z2=uid(), z3=uid();
   series.push({
@@ -548,7 +548,7 @@ function buildSeed(){
     widthSurcharge:{enabled:true, baseWidth:815, step:100, percent:15, maxWidth:1100}, allowNormalOpening:false, allowInsideOpening:true,
     insideOpeningAddon:18, insideOpeningNote:'50мм — тільки інсайд (всередину приміщення).',
     tiers:[{id:z1,label:'до 800×2050мм',maxWidth:800,maxHeight:2050},{id:z2,label:'до 800×2300мм',maxWidth:800,maxHeight:2300},{id:z3,label:'до 800×2500мм',maxWidth:800,maxHeight:2500}],
-    rows: buildWoodRows(z1,z2,z3,[3,4,5],'HF')
+    rows: buildWoodRows(z1,z2,z3,[3,4,5],'K')
   });
   const al1=uid(), al2=uid(), al3=uid();
   series.push({
@@ -558,7 +558,7 @@ function buildSeed(){
     insideOpeningAddon:0, insideOpeningNote:'40мм — тільки звичайне відкривання (на себе).',
     alumFrameAddon:{[al1]:55, [al2]:0, [al3]:0},
     tiers:[{id:al1,label:'до 800×2050мм',maxWidth:800,maxHeight:2050},{id:al2,label:'до 800×2300мм',maxWidth:800,maxHeight:2300},{id:al3,label:'до 800×2500мм',maxWidth:800,maxHeight:2500}],
-    rows: buildWoodRows(al1,al2,al3,[2,3,4],'HF')
+    rows: buildWoodRows(al1,al2,al3,[2,3,4],'K')
   });
   const bl1=uid(), bl2=uid(), bl3=uid();
   series.push({
@@ -568,7 +568,7 @@ function buildSeed(){
     insideOpeningAddon:18, insideOpeningNote:'55мм Light — універсальна, доступні обидва варіанти відкривання.',
     alumFrameAddon:{[bl1]:55, [bl2]:0, [bl3]:0},
     tiers:[{id:bl1,label:'до 800×2050мм',maxWidth:800,maxHeight:2050},{id:bl2,label:'до 800×2300мм',maxWidth:800,maxHeight:2300},{id:bl3,label:'до 800×2500мм',maxWidth:800,maxHeight:2500}],
-    rows: buildWoodRows(bl1,bl2,bl3,[2,3,4],'HF')
+    rows: buildWoodRows(bl1,bl2,bl3,[2,3,4],'K')
   });
   const cl1=uid(), cl2=uid(), cl3=uid();
   series.push({
@@ -578,7 +578,7 @@ function buildSeed(){
     insideOpeningAddon:18, insideOpeningNote:'55мм Standart — універсальна, доступні обидва варіанти відкривання.',
     alumFrameAddon:{[cl1]:55, [cl2]:0, [cl3]:0},
     tiers:[{id:cl1,label:'до 800×2050мм',maxWidth:800,maxHeight:2050},{id:cl2,label:'до 800×2300мм',maxWidth:800,maxHeight:2300},{id:cl3,label:'до 800×2500мм',maxWidth:800,maxHeight:2500}],
-    rows: buildWoodRows(cl1,cl2,cl3,[2,3,4],'HF')
+    rows: buildWoodRows(cl1,cl2,cl3,[2,3,4],'K')
   });
 
   return series;
@@ -2567,84 +2567,121 @@ function classifyFrameScrewType(seriesName, frameMatrix){
   if(/40мм|^alum\s*40$|55.*light|^alum\s*55\s*light$/.test(name)) return 'alum25';
   return null; // нова/незнайома серія — жодного типорозміру не додаємо автоматично, щоб не рахувати навмання
 }
+function doorHeadShape(hingeText){
+  // Атлав/Отлав — плоска (потайна) шляпка; всі інші завіси (К1000, Анселмі, Хафеле тощо) — кругла.
+  // Це слово ще немає в довіднику завіс, тому дізнатись про нього можна лише з поля "Завіси",
+  // вписаного вручну в готовій специфікації для конкретної двері.
+  return /атлав|отлав/i.test(hingeText||'') ? 'flat' : 'round';
+}
 function computePickerSummary(sp){
   const invoice = state.invoices.find(i=>i.id===sp.invoiceId);
-  const items = invoice ? invoice.items : [];
+  // Розкладаємо рахунок на окремі "двері" (з урахуванням кількості), окремо скритий монтаж і
+  // наличник — у тому ж порядку, в якому їх розгортають buildSpecFromInvoice/buildTrimSpecFromInvoice,
+  // щоб можна було зіставити з відповідним рядком у вже сформованій специфікації (там, де вручну
+  // могли вписати "Атлав" у полі "Завіси" для конкретної двері).
+  const hiddenSlots = [], trimSlots = [];
+  (invoice ? invoice.items : []).forEach(item=>{
+    const qty = item.qty||1;
+    for(let i=0;i<qty;i++){
+      if(item.type==='hidden') hiddenSlots.push(item);
+      else if(item.type==='trim') trimSlots.push(item);
+    }
+  });
+  const hiddenEntries = (sp.entries||[]).filter(e=>e.type==='door');
+  const trimEntries = (sp.trimEntries||[]).filter(e=>e.type==='door');
+
   let hingesTotal=0, cornersTotal=0, stopperTotal=0, platesTotal=0, doorsTotal=0, sealManualDoors=0;
-  const screwBuckets = {};
+  const screwBuckets = {}; // "тип_форма" (напр. "alum25_round") → кількість
+  const hinge16Buckets = {round:0, flat:0}; // шурупи 4,2×16 під завіси
   const sealBuckets = {};  // колір ущільнювача → метри
   const hingeBuckets = {}; // "назва|колір" завіс → {name,color,qty}
   const lockBuckets = {};  // колір замку → кількість дверей (1 компл. замок+планка на двері)
-  items.forEach(item=>{
-    const qty = item.qty||1;
-    doorsTotal += qty;
+
+  const processSlot = (item, entry)=>{
+    doorsTotal++;
     const h = parseFloat(item.h)||0;
     const s = item.spec||{};
     const hq = parseFloat(s.hingeQty)||0;
-    const doorHinges = hq*qty;
-    hingesTotal += doorHinges;
-    // Ущільнювач: до 2000мм — 5м, від 2001 до 2700мм — 6м (на кожну двері), з розбивкою по кольору.
-    // Вище 2700мм — рахують вручну, тому поле лишаємо порожнім.
+    hingesTotal += hq;
+    const shape = doorHeadShape(entry ? entry.hinge : '');
     const sealColor = s.sealColor || '—';
     if(h>2700){
-      sealManualDoors += qty;
+      sealManualDoors++;
     } else {
       const sealPerDoor = h<=2000 ? 5 : 6;
-      sealBuckets[sealColor] = (sealBuckets[sealColor]||0) + sealPerDoor*qty;
+      sealBuckets[sealColor] = (sealBuckets[sealColor]||0) + sealPerDoor;
     }
-    // Завіси — з розбивкою по назві (К1000 / Анселмі тощо) та кольору.
-    if(doorHinges>0){
-      const hName = hingeNameShort(s.hingeCode||'');
+    if(hq>0){
+      // Назва завіс для зведеного рядка "Завіси ..." — беремо з уже відредагованого поля специфікації,
+      // якщо воно є (щоб врахувати ручні правки на кшталт "Атлав"), інакше — з сирих даних рахунку.
+      const hName = (entry && entry.hinge ? entry.hinge.split('\n')[0].trim() : '') || hingeNameShort(s.hingeCode||'') || '—';
       const hColor = s.hingeColor || '—';
       const key = hName+'|'+hColor;
       if(!hingeBuckets[key]) hingeBuckets[key] = {name:hName, color:hColor, qty:0};
-      hingeBuckets[key].qty += doorHinges;
+      hingeBuckets[key].qty += hq;
     }
-    // Замок, відповідна планка — 1 компл. на кожну двері, з розбивкою по кольору замку.
     const lockColor = s.lockColor || '—';
-    lockBuckets[lockColor] = (lockBuckets[lockColor]||0) + qty;
-    // Монтажні пластини — лише двері скритого монтажу (для дверей з наличником не кладемо).
+    lockBuckets[lockColor] = (lockBuckets[lockColor]||0) + 1;
     if(item.type==='hidden'){
       const platesPerDoor = h<=2100 ? 10 : 10+Math.ceil((h-2100)/100);
-      platesTotal += platesPerDoor*qty;
+      platesTotal += platesPerDoor;
     }
-    // Шурупи під завіси (по 2 на завісу) — розбиваємо по типорозміру каркаса.
-    const seriesName = item.type==='trim' ? (s.modelName||item.title||'') : (s.profileName||item.title||'');
-    const screwType = classifyFrameScrewType(seriesName, s.frameMatrix||'');
-    if(screwType && doorHinges>0) screwBuckets[screwType] = (screwBuckets[screwType]||0) + doorHinges*2;
-    // Монтажні кутки — лише двері скритого монтажу, і лише якщо короб НЕ замовлено "в зборі".
+    // Шурупи під завіси: скритий монтаж — 4,2×16 в короб (завжди пласка шляпка) ТА ДО ТОГО Ж ще
+    // й шуруп під сам профіль (25/45/70мм — за типорозміром каркаса, кругла/пласка за типом завіс).
+    // Наличник — лише під профіль (70/45/25мм), 4,2×16 там не кладемо взагалі.
+    if(hq>0){
+      if(item.type==='hidden') hinge16Buckets.flat += hq*2;
+      const seriesName = item.type==='trim' ? (s.modelName||item.title||'') : (s.profileName||item.title||'');
+      const screwType = classifyFrameScrewType(seriesName, s.frameMatrix||'');
+      if(screwType){
+        const key = screwType+'_'+shape;
+        screwBuckets[key] = (screwBuckets[key]||0) + hq*2;
+      }
+    }
     if(item.type==='hidden'){
       const boxAssembled = (s.selectedExtras||[]).some(e=>/короб.*(з розпірками|в\s*збор)/i.test(e.name||''));
-      if(!boxAssembled) cornersTotal += 4*qty;
+      if(!boxAssembled) cornersTotal += 4;
     }
-    // Стопор — рахуємо по кожній двері (скритий монтаж або з лиштвою), де обрано відповідну опцію.
-    if((s.selectedExtras||[]).some(e=>/стопор/i.test(e.name||''))) stopperTotal += qty;
-  });
+    if((s.selectedExtras||[]).some(e=>/стопор/i.test(e.name||''))) stopperTotal++;
+  };
+  hiddenSlots.forEach((item,idx)=> processSlot(item, hiddenEntries[idx]));
+  trimSlots.forEach((item,idx)=> processSlot(item, trimEntries[idx]));
+
   const dowelsTotal = cornersTotal*2; // 2 гужони на 1 кутик
   const hingeCapsTotal = hingesTotal*2; // 2 заглушки на 1 завісу
-  // Шурупи 4,2×16: 2 на кожну завісу + 2 на кожну двері під відповідну планку замка.
-  const screwCapsTotal = hingesTotal*2 + doorsTotal*2;
-  const screwRows = Object.keys(screwBuckets).filter(k=>screwBuckets[k]>0).map(k=>({label:SCREW_SIZE_LABEL[k], qty:screwBuckets[k]}));
+  const strikeScrewsTotal = doorsTotal*2; // шурупи 4,2×16 під відповідну планку замка ("ответка") — завжди пласка шляпка
+  const screwRows = [];
+  Object.keys(SCREW_SIZE_LABEL).forEach(type=>{
+    ['round','flat'].forEach(shape=>{
+      const qty = screwBuckets[type+'_'+shape];
+      if(qty>0) screwRows.push({label:SCREW_SIZE_LABEL[type], qty, shape});
+    });
+  });
   const sealRows = Object.keys(sealBuckets).sort().map(color=>({label:'Ущільнювач ('+color+'), м', qty:sealBuckets[color]}));
   if(sealManualDoors>0) sealRows.push({label:'Ущільнювач, двері >2700мм ('+sealManualDoors+' шт) — вручну, м', qty:''});
   const hingeRows = Object.values(hingeBuckets).sort((a,b)=>(a.name+a.color).localeCompare(b.name+b.color))
     .map(b=>({label:'Завіси '+b.name+' ('+b.color+'), шт', qty:b.qty}));
   const lockRows = Object.keys(lockBuckets).sort().map(color=>({label:'Замок, відповідна планка ('+color+'), компл.', qty:lockBuckets[color]}));
-  const allDoorEntries = [...(sp.entries||[]), ...(sp.trimEntries||[])].filter(e=>e.type==='door');
+  const allDoorEntries = [...hiddenEntries, ...trimEntries];
   // Ручки: 1 комплект на кожну двері за замовчуванням ("Так"); якщо в специфікації вручну
   // проставлено "Ні" — та двері не враховується. Якщо рядків специфікації ще немає — рахуємо всі двері рахунку.
   const handlesTotal = allDoorEntries.length ? allDoorEntries.filter(e=>e.handle!=='Ні').length : doorsTotal;
-  return {invoiceFound:!!invoice, sealRows, hingeRows, hingesTotal, hingeCapsTotal, screwCapsTotal, screwRows,
+  return {invoiceFound:!!invoice, sealRows, hingeRows, hingesTotal, hingeCapsTotal, hinge16Buckets, strikeScrewsTotal, screwRows,
           platesTotal, lockRows, cornersTotal, dowelsTotal, stopperTotal, handlesTotal};
 }
+const SCREW_ICON_ROUND = `<img src="data:image/png;base64,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" style="height:50px; vertical-align:middle; display:inline-block;">`;
+const SCREW_ICON_FLAT = `<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAWUAAAH/CAYAAACPeMyeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsIAAA7CARUoSoAAAAGHaVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8P3hwYWNrZXQgYmVnaW49J++7vycgaWQ9J1c1TTBNcENlaGlIenJlU3pOVGN6a2M5ZCc/Pg0KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyI+PHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj48cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0idXVpZDpmYWY1YmRkNS1iYTNkLTExZGEtYWQzMS1kMzNkNzUxODJmMWIiIHhtbG5zOnRpZmY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vdGlmZi8xLjAvIj48dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPjwvcmRmOkRlc2NyaXB0aW9uPjwvcmRmOlJERj48L3g6eG1wbWV0YT4NCjw/eHBhY2tldCBlbmQ9J3cnPz4slJgLAAAU5ElEQVR4Xu3d23bbxrKGUdDv/8zhvvBmFlNqUiCIw9/dc46hi6VliThUfYboJL7d7/f7AkCEP/UTAFxHlAGCiDJAEFEGCCLKAEFEGSCIKAMEEWWAC9xut+V2u9VPL7fnf3mk9QsAON4///yz3G43T8oASf7zpNzy29PzL18OMKWt7fw1yg+/vcDy5kUAZrBHJ1dH+dlvL7zhWwJ0a88mborysz0PBqAXR7Xv6yg/HHWAAEmObt1uUX529EEDnOnMph0S5YczTwRgb1c07NAoP7vi5AA+dXWrTovyw9UnDNCS0qbTo/yQcgGAuaW16LIoP3t3UQIODxhQanciovyQepGAcaR3JirKD+8u2hJy4YB+9NSUyCg/e3cxww8duFiP/YiP8kOPFxe4Rs+96CbKDz1fbOBYI/Shuyg/jHDxgX2M1INuo/ww0s0APjPi/ncf5YcRbw7QNvK+DxPlh1c3a7DThGmNvuPDRflh9BsHs5llp4eN8sMsNxJGNdsODx/lh9aNneTUoVsz7u00UV5e3OBlgpsMvZl5V6eK8sPMNxyS2c1Jo/zQGoCJLwdcyj7+9ad+YiatG94aDOBYrb1r7ecMpn5SfmYo4Hz27qepn5SftQahNTDAPlr71drD2Yjyk9ZAtAYH+E5rr1r7NyNvX7xQh8Zlgn3Yrfc8Kb9QB6UOEvC5ukd1zxDlt+rA1IEC1qv7U/eLv7x9sUIdpsVAwWr25zOelFcwQLAf+/SeKK9UB6n1uz/wX3VP6h7xkyh/oA5UHTjgf+p+1P2hTZQ/VAerDh7wcy/q3vCaKG9QB6wOIMys7kPdF94T5Y3qoNVBhBnVPah7wu9E+QsGDl6zH9uI8o7qUwLMxPzvQ5S/VJ8GDCYzqnNf94L1RHkHBhD+xz58R5R38jyI9akBRvY874L8PVE+iDAzA3O+P1HekacEZmb+9yHKB/IUwcjM9zFEeWeeFpiRud+PKB/AH/oxOn+4dxxRBggiygfxtMyoPCUfS5QBgojygTwtMxpPyccTZYAgonwwT8uMwlPyOUQZIIgon8DTMr3zlHweUQYIIsoX8LRMT8zruUT5JH7kYwTm+HiifBFPH/TAnJ5PlE/kKYOemd9ziDJAEFE+mX88jl74x+CuIcoAQUT5Yp6WSWQuryPKF/CjID0xr+cS5QCeSkhiHq8lyhfx9EEPzOn5RBkgiCiH8CMjCczh9UT5Qn40JJn5vIYoB/GUwpXMXwZRvpinERKZy+uIMkAQUQ7jR0iuYO5yiHIAPyqSxDxeS5QDeWrhTOYtiyiH8HRCAnN4PVEGCCLKofxIyRnMWR5RDuJHR65k/jKIcjBPMRzJfGUS5TCeVriCucshygBBRDnQ81OLHzE5wvNceUrOIsoAQUS5A56W2ZN5yibKofxIyRnMWR5RBggiygBBRBkgiCgDBBFlgCCiDBBElAGCiDJAEFGGCdxut38/yHa7+1d6YvmPxvCJLcE1V3lEOZgoU20J7zvmKo8oBxPlOe0d3uXNfw7WXOUR5WCWZ1xHh/cdc5VNlINZnr5dGd53zFU2UQ5mefKlhvcdc5VNlINZngw9hvcdc5VNlINZnnMcEd0l+J6Zq2yiHMzy7Ge28L5jrrKJcjDL8xnhXcdcZRPlYJbnpyPCO9u1NVfZRDnYrMsjvMeada56IcrBRl4e4b3OyHM1AlEO1vvyCG+m3udqdKIcrIflEd7+9DBXMxPlYCnLI7xjSZkr2kQ52JnLI7zzOHOu+JwoB9tzeY6I7rLDcXG+PeeK/YlysE+XR3hZ49O54lyiHKy1PMLLt1pzRQ5RDrZngN1mHkQ5mygH+zTKbiVriHI2UQ7WirLbxbdEOduf+gky3e93CwQTEGWAIKIMEESUAYKIMkAQUQYIIsoAQUQZIIgoAwQRZYAgogwQRJQBgogyQBBRBggiygBBRBkgiCgDBBFlgCCiDBBElAGCiDJAEFEGCCLKAEFEGSCIKAMEEWWAIKIMEESUAYKIMkzidrstt9utfpowt/v9fq+fJMPzArlNrPVJeM1VHlEOJsq880l8XzFXebx9AR14vPXw/PGp+/0uwh3wpBzMk/J8tsS2+m1WzFU2UQ5mecZ1RnxfMVfZRDmY5enfHvFddr7/5iqbKAezPH3ZI8Bn3GdzlU2Ug1meTL3E9xVzlU2Ug1mea+0R3yXw3pmrbKIczPKcY9T4vmKusolyMMuzvz0C3Pu9MFfZRDmY5dlOfF8zV9lEOZjl+d0e8V0mu77mKpsoB7M8/7VHgF1Hc5VOlIPNujzie6xZ56oXohxs9OUR32uMPle9E+VgoyzPHvFdOr8GSUaZq1GJcrAel2ePAPdyrr3qca5mIsrBkpdHfPuVPFeIcrSE5dkjvsuFx89PCXPFa6Ic7MzlEd95nDlXfE6Ugx21PHsEeM/j4VxHzRX7EOVg3y6P+NLy7VxxLFEOtnZ59ojv8strMI61c8U1RDlYXR7xZQ91rsgiysG+jbBbS4soZxPlYGuj7BbyCVHO9qd+gmz3+/3HBzAOUe6EAMMcRBkgiCgDBBFlgCCiDBBElAGCiDJAEFEGCCLKAEFEGSCIKAMEEWWAIKIMEESUAYKIMkAQUQYIIsoAQUQZIIgoAwQRZYAgogwQRJQBgogyTOJ2uy23261+mjCiDAN6BPj5gz7c7vf7vX6SDM+L5DbR8m1szVUeT8rQifrk+2mQ7/e7CHfAk3IwT8rz+jS41bt5MVfZRDmY5ZnDkQFuMVfZRDmY5RnL2fF9xVxlE+VglqdfKQFuMVfZRDmY5elDcoBbzFU2UQ5mefL0FuAWc5VNlINZnuuMEN9XzFU2UQ5mec4xcoBbzFU2UQ5mefY3W4BbzFU2UQ5meb4jwG3mKpsoB7M864jvZ8xVNlEOZnl+EuDvmatsohxs9uUR4GPMPlfpRDnYTMsjwOeZaa56JMrBRlwe8b3eiHM1ElEO1vvyCHCm3udqdKIcrKflEeB+9DRXMxLlYKnLI8B9S50r/hLlYFcvj/iO6eq54j1RDnbm8gjwPM6cKz4nysGOWh4BnttRc8U+RDnYHssjwFR7zBXHEeVgnyyP+LLWJ3PF+UQ52KvlEWC+8WquyCDKwb6N72LpaBDlbH/qJ+jX/X7/8QH0xZNysFdPym4Z3/CknM2Tcic8/cIcRBkgiCgDBBFlgCCiDBBElAGCiDJAEFEGCCLKAEFEGSCIKAMEEWWAIKIMEESUAYKIMkAQUYZJ3G63l/+NbnKIMgzoEeDnD/ogyjAAAR6HKENnaoDXRtjfXNMHf0dfsOdlc5vmtDa4La9mxlxlE+VglmcuRwS4xVxlE+VglmdsWyP87SyYq2yiHMzyjOOqALeYq2yiHMzy9GlrgJeT7rO5yibKwSxPvvQAt5irbKIczPJk6THALeYqmygHszzX2hrh9HtlrrKJcjDLc55RA9xirrKJcjDLc4ytAV4GuQ/mKpsoB7M835s9wC3mKpsoB7M8n9sa4Zmur7nKJsrBLM97AryNucomysEsz/9sDfDi2v1grrKJcrBZl0eAjzXrXPVClIPNsDwCfL4Z5qpnohxsxOXZGuFRzj/BiHM1ElEO1vvyCHCm3udqdKIcrKfl2RrgpYNzG01PczUjUQ6WujwC3LfUueIvUQ6WsjxbI3zlMfNaylzRJsrBrlgeAR7fFXPFeqIc7Ojl2Rrg5aDj4RxHzxXfEeVgey6PAPOw51yxP1EOtnV5BJh3ts4V5xDlYGuXZ2uE331PxrV2rriGKAdrLc/WAC8WkP/XmityiHIwAeYIopztT/0E/bnf7z8+gD6JcmdqfAUYxiLKnRBgmIMoAwQRZYAgogwQRJQBgogyQBBRBggiygBBRBkgiCgDBBFlgCCiDBBElAGCiDJAEFEGCCLKAEFEGSCIKAMEEWWYyDd/GS/nEGUY2O12+88H+UQZBiLC/RNl6FQNsAiP4Xb3VyTHel4yt4kt0W3NjbnKJsrBLM+8tgR4WTkn5iqbKAezPPM4MsKVucomysEsz7i2RHivGTBX2UQ5mOUZw5YALwfec3OVTZSDWZ4+bYnwmffXXGUT5WCWJ9+WAC8X309zlU2Ug1mePD1GuDJX2UQ5mOW53pYIp98rc5VNlINZnnNtCfDS4b0xV9lEOZjlOdaWCI9wH8xVNlEOZnn2NWuEK3OVTZSDWZ7ttgR4meQ6m6tsohzM8qy3JcKzXlNzlU2Ug1meti0BXlzDf5mrbKIczPL8JcL7MlfZRDnYrMuzJcIzXZ9vzTpXvRDlYDMsz5YALwNfjzPMMFc9E+VgIy7PlgiPcu4pRpyrkYhysN6XZ0uAl07PtSe9z9XoRDlYb8sjwn3oba5mI8rB0pdnS4QTz2M26XM1O1EOlrQ8WwK8BBw3PyXNFT+JcrArl0eEx3XlXPE7UQ525vJsifDRx8QxzpwrPifKwY5ani0BXnY+Bq5z1FyxD1EOttfybInwN69Htr3mimOIcrAty7MlwMsH35/+bZkrziPKwdYsjwjzqTVzxXVEOVhrebZE2C3mWWuuyCHKwbYEeLFo/EKUs/2pn6Av9/v9xwfQL1HujADD2ES5EyIMcxBlgCCiDBBElAGCiDJAEFEGCCLKAEFEGSCIKAMEEWWAIKIMEESUAYKIMkAQUYYJ3G63fz/q58kiyjCg5wgLb19EGQawNcL+c7B5RBk69GmE/cUI/RBl6MQnEV6EuFv+4tRgz8vnNs1nbXwf1s6IucomysEsz1yOinBlrrKJcjDLM7azIlyZq2zeU4YTeV+Y33hSDuaJpn9r4/twxn02V9lEOZjl6U9ihCtzlU2Ug1mefD1EuDJX2bynDB/yvjBH8qQczBNNhrXxfUi/V+YqmygHszzXGC3ClbnKJsrBLM85Ro9wZa6yeU+ZKXlfmFSelIN5otnP2vg+jHy9zVU2UQ5mebYT4dfMVTZRDmZ51hPh9cxVNu8p0y3vCzMiT8rBPNH819r4PrhmbeYqmygHm315RPgYs89VOlEONtvyiPA5Zpur3nhPmUt5Xxj+y5NysBGfaNbG92GU804y4lyNRJSDjbA8IpxnhLkamSgH63F5RDhfj3M1E+8p8zXvC8N+PCkHS32iWRvfh6RjJ3eu+EuUg6UsjwiPJWWuaBPlYFctjwiP7aq5Yh3vKbMs3heGGJ6Ugx35RLM2vg97vz7XOXKu+J4oB9tzeUSYhz3niv2JcrBvlkeEeeWbueJ43lMeiPeFoX+elIP99kSzNr4Pre/BfH6bK64lysHq8ogwe6hzRRZvX3RiTZCf346wbNAnUe6cCMNYRLkznoZhbKLcCRGGOYgyQBBRBggiygBBRLkTa/6ROPiNOconysHqH+xZKL5R56fOFxlEOVxdnLpYsEadmzpX5BDlDlgg9mSesolyh+pTD7xjXvoiyp2oTzcWjTXqnNQ5Io8od6QuVF04eFbno84PmUS5M3Wx6uJBS50bcolyhywYv/Gbdb9EeQAWkGd1Hvwm3hdR7lRdtLqIzKnOQZ0T8olyx+rC1YVkLvX+1/mgD6LcOYsHYxHlwdSnJeZQ77vfrPvlb7MehKWcT73nD+5930R5IHVJ3drx1Htcuef9E+XB1KV1e/tX7+kr7vUYvKc8GIs5htvt9u8HcxHlwVnqvqwJces33tbn6JO3LwZVF9ttzlXvVcvz/au/3r0diygPzPLmqvem5dX9ev7aV7+Gfony4Cxwjm9C/FC/x2+/nv6I8uAs8bXq9W9Ze0/q91r7dfRFlCdgmc9Vr3fLp/egfs9Pv55+iPIkLPWx6vVt+eaaextqHv6RuElY5GPcVv4jbN9c/9++P2PxpDyRutxu/Tb1OrbsdW3ra+31fcklypOx5NvU69ay97Wsr7n39yeTKE/Isq9Tr1PLUdeuvvZRr0MeUZ6UpW+r16XljGtVj+OM1ySDKE/Mn+j/VQPYcub1qcdz5mtzPVGe2MzLX8+95YrrUY/rimPgWqI8udkiUM+35aprUI/tquPgWqLM8DGo59eScM7eTmIRZR5GC0IvIX6ox5t0bJxLlFmWQaJQz6El8bzqcSceI+cRZf7VYxzqMbckn0c9/uRj5RyizH/0EIl6jC2Jx90y2ttGfE+U+aFGL2VE6nFVKce5Vj2f3o6fY4gyTSlPcDVcLVce31b1vHo8B44hyjRdGY362i1nHs/e6vn1fC7sT5R56cx41NdqOfL1z1LPc4RzYl+izFtHRqR+75Y9Xy9BPefRzo/viTK/2vP95Rqllm9fI1U991HPk++IMr/6Nib161s+/Z69qddg9PNlO1FmlS1RqV/Tsub79K5ehxnOme1EmdXWxKX+mpbW141sz7d/GJ8o85FWYIT4tXptZr0OrCfKfKRG5p3ZR6teq9mvB+uIMh+rsXlmnP6q18h1Ya0/9RPwm1Zg7vd78/O0rxe8IspsUkNTnwxn5lrwDVFmsxpmfgbZNeJTosxuapBmU89fkNlClPlKDU8N06zqdYG1RJmv1QDNGOYZz5ljiDK7qGGeSQ3yzNeC74kyh6ihGlU9T0HmW6LMbmqQarBGU8+vnj9sIcrsqoaphgt4T5TZ3QxhrudUzxm2EmUOMXKkBJkjiTKnqCHrVT0PQWZvosxharBq0HpXzw/2IMocqoar5zD3fOz0Q5Q5XA1zj2qQRzgnMokyp6uBS1ePV5A5kihzihqyGrpe1POAvYkyp6lB6yHMPRwjYxFlTlXDnKwGuadjp1+izKVq+FLU4xJkziLKnK4GrgYwTT1eOJIoc4kauqQwJx0L8xFlLpMY5noM9RjhaKLMpZKiJ8gkEGWi1DCepb6uIHMVUeZyNYA1kDATUSbClWGur1WPBc4kysS4IoaCTBpRJlYN5t7q9xdkEogyUWoYaziPUl8XriLKxKmBPCLMR3xP2IMoE+nIMNfvVV8LriTKxDoiloJMOlGmGzWo3xJkEoky0Wo4vwnzN18LZxFl4u0R5vo19XtCClGmC99EVJDpiSjTpRratQSZdKJMN2pQ14R5za+BJKJMVz4Jc/3/6tdCIlGmO2viKsj0SpTpXg1w/d+CTE9EmS7V0NYQQ69u9zrd0JHfYmy86Y0nZbr2Lrrv/j9IJcp0rxXf1uegB6LMcASZnokyQBB/0AcQxJMyQBBRBggiygBBRBkgiCgDBPk/utPlVmWpRwMAAAAASUVORK5CYII=" style="height:50px; vertical-align:middle; display:inline-block;">`;
 function renderPickerCard(sp, p){
-  const row = (label, qty)=>`<tr><td class="picker-label">${esc(label)}</td><td class="picker-qty">${qty || (qty===0?0:'')}</td></tr>`;
+  const row = (label, qty, icon)=>`<tr><td class="picker-label">${icon?`<span style="display:inline-flex; align-items:center; gap:5px;">${icon}${esc(label)}</span>`:esc(label)}</td><td class="picker-qty">${qty || (qty===0?0:'')}</td></tr>`;
+  const shapeIcon = shape=> shape==='flat' ? SCREW_ICON_FLAT : SCREW_ICON_ROUND;
   const rows = [
     ...p.sealRows.map(r=>row(r.label, r.qty)),
     ...p.hingeRows.map(r=>row(r.label, r.qty)),
     row('Заглушки на завіси, шт', p.hingeCapsTotal),
-    row('Шурупи 4,2 × 16, шт', p.screwCapsTotal),
-    ...p.screwRows.map(r=>row(r.label+', шт', r.qty)),
+    p.hinge16Buckets.round>0 ? row('Шурупи 4,2 × 16 (завіси), шт', p.hinge16Buckets.round, SCREW_ICON_ROUND) : '',
+    p.hinge16Buckets.flat>0 ? row('Шурупи 4,2 × 16 (завіси), шт', p.hinge16Buckets.flat, SCREW_ICON_FLAT) : '',
+    row('Шурупи 4,2 × 16 (відповідач), шт', p.strikeScrewsTotal, SCREW_ICON_FLAT),
+    ...p.screwRows.map(r=>row(r.label+', шт', r.qty, shapeIcon(r.shape))),
     row('Монтажні пластини, шт', p.platesTotal),
     ...p.lockRows.map(r=>row(r.label, r.qty)),
     row('Монтажні кутки, шт', p.cornersTotal),
@@ -2957,6 +2994,7 @@ function attachHandlers(){
         modelName: calc.series.name,
         frameMatrix: calc.series.frameMatrix||'',
         finishLabel: calc.row.finishLabel,
+        hingeName: hingeName(calc.hingeType), hingeCode: calc.hingeType, hingeQty: calc.hingeQty,
         profileThickness: calc.series.name,
         opening: f.opening,
         openingSide: f.openingSide,
