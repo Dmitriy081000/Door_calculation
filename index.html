@@ -660,6 +660,9 @@ async function loadAll(){
     });
     // old temporary hinge code 'WD' -> 'HF' (Хафеле)
     state.series.forEach(s=>{ s.rows.forEach(r=>{ Object.values(r.cells).forEach(c=>{ if(c.hingeType==='WD'){ c.hingeType='HF'; migrated=true; } }); }); });
+    // WOOD 40/50, Alum 40/55 Light/55 Standart: default hinge was mistakenly 'HF' (Хафеле) — should be 'K' (К1000).
+    const woodFamilyNames = new Set(['WOOD 40','WOOD 50','Alum 40','Alum 55 Light','Alum 55 Standart']);
+    state.series.filter(s=>woodFamilyNames.has(s.name)).forEach(s=>{ s.rows.forEach(r=>{ Object.values(r.cells).forEach(c=>{ if(c.hingeType==='HF'){ c.hingeType='K'; migrated=true; } }); }); });
     if(migrated) await storeSet(KEYS.series, state.series);
   }
   state.hingeRef    = await storeGet(KEYS.hingeRef, null)    ?? SEED_HINGE_REF;
