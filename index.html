@@ -1476,7 +1476,7 @@ function renderCalcGeneric(kind){
     <div class="row2">
       <div class="field">
         <label>Завіси</label>
-        <select id="${prefix}_hingetype">${state.hingeRef.filter(h=> kind==='hidden' || h.code==='HF').map(h=>`<option value="${h.code}" ${h.code===calc.hingeType?'selected':''}>${esc(h.name)}${h.maxWeightPair?' (до '+h.maxWeightPair+'кг/пара)':''}</option>`).join('')}</select>
+        <select id="${prefix}_hingetype">${state.hingeRef.map(h=>`<option value="${h.code}" ${h.code===calc.hingeType?'selected':''}>${esc(h.name)}${h.maxWeightPair?' (до '+h.maxWeightPair+'кг/пара)':''}</option>`).join('')}</select>
       </div>
       <div class="field"><label>Кіл-сть завіс</label><input type="text" inputmode="numeric" id="${prefix}_hingeqty" value="${calc.hingeQty}"></div>
     </div>
